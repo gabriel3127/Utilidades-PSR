@@ -674,9 +674,9 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
   const Icone = EtapaAtual.icone;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Progress Bar */}
-      <div className="sticky top-0 bg-white shadow-md z-10">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Progress Bar - Fixed */}
+      <div className="sticky top-0 bg-white shadow-md z-10 flex-shrink-0">
         <div className="flex overflow-x-auto scrollbar-hide">
           {etapas.map((etapa, idx) => {
             const IconeEtapa = etapa.icone;
@@ -711,27 +711,29 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
         </div>
       </div>
 
-      {/* Conteúdo da Etapa */}
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
-          <div className="flex items-center gap-3 mb-6">
-            <div className={`p-3 rounded-full ${EtapaAtual.cor}`}>
-              <Icone size={24} className="text-white" />
+      {/* Conteúdo da Etapa - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto p-4 pb-24">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-3 rounded-full ${EtapaAtual.cor}`}>
+                <Icone size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  {modoEdicao ? 'Editar' : 'Nova'} - {EtapaAtual.titulo}
+                </h2>
+                <p className="text-sm text-gray-600">Etapa {etapaAtual + 1} de {etapas.length}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">
-                {modoEdicao ? 'Editar' : 'Nova'} - {EtapaAtual.titulo}
-              </h2>
-              <p className="text-sm text-gray-600">Etapa {etapaAtual + 1} de {etapas.length}</p>
-            </div>
-          </div>
 
-          {renderEtapaAtual()}
+            {renderEtapaAtual()}
+          </div>
         </div>
       </div>
 
-      {/* Navegação Fixa */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
+      {/* Navegação Fixa - Fixed */}
+      <div className="sticky bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 flex-shrink-0">
         <div className="max-w-2xl mx-auto flex gap-3">
           {etapaAtual > 0 && (
             <button
