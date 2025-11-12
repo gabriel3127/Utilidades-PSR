@@ -29,7 +29,6 @@ const DashboardVisitas = () => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Erro ao buscar visitas:', error);
     } else {
       setVisitas(data || []);
     }

@@ -377,20 +377,34 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     }
   };
 
-  const BotaoOpcao = ({ opcao, selecionado, onClick, cor = 'orange' }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-3 rounded-lg border-2 transition-all font-medium text-sm ${
-        selecionado
-          ? `bg-${cor}-600 text-white border-${cor}-600 shadow-lg scale-105`
-          : 'bg-white border-gray-300 text-gray-700 hover:border-orange-400 hover:shadow-md active:scale-95'
-      }`}
-    >
-      {selecionado && <Check size={16} className="inline mr-1" />}
-      {opcao}
-    </button>
-  );
+  const BotaoOpcao = ({ opcao, selecionado, onClick, cor = 'orange' }) => {
+    const getCoresBotao = (cor, selecionado) => {
+      if (selecionado) {
+        switch (cor) {
+          case 'green': return 'bg-green-600 text-white border-green-600';
+          case 'red': return 'bg-red-600 text-white border-red-600';
+          case 'blue': return 'bg-blue-600 text-white border-blue-600';
+          case 'yellow': return 'bg-yellow-500 text-white border-yellow-500';
+          case 'gray': return 'bg-gray-600 text-white border-gray-600';
+          default: return 'bg-orange-600 text-white border-orange-600';
+        }
+      }
+      return 'bg-white border-gray-300 text-gray-700 hover:border-orange-400 hover:shadow-md active:scale-95';
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`px-3 py-2 text-xs font-medium rounded-lg border-2 transition-all min-h-[44px] flex items-center justify-center ${getCoresBotao(cor, selecionado)} ${
+          selecionado ? 'shadow-lg scale-105' : ''
+        }`}
+      >
+        {selecionado && <Check size={14} className="mr-1" />}
+        <span className="text-center leading-tight">{opcao}</span>
+      </button>
+    );
+  };
 
   // ETAPA 0: CLIENTE
   const renderEtapa0 = () => (
@@ -590,11 +604,15 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
           onChange={(e) => handleInputChange('descricao', e.target.value)}
           placeholder="Descreva a ocorrência com o máximo de detalhes..."
           rows="8"
+          maxLength="500"
           className="w-full border-2 border-gray-300 rounded-lg p-3 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-200 resize-none"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          {formData.descricao.length} caracteres
-        </p>
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Máximo 500 caracteres</span>
+          <span className={formData.descricao.length > 450 ? 'text-orange-600 font-medium' : ''}>
+            {formData.descricao.length}/500
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -684,7 +702,7 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
               <button
                 key={etapa.id}
                 onClick={() => setEtapaAtual(idx)}
-                className={`flex-1 min-w-[80px] p-3 border-b-4 transition-all ${
+                className={`flex-1 min-w-[70px] p-2 border-b-4 transition-all ${
                   idx === etapaAtual
                     ? `${etapa.cor.replace('bg-', 'border-')} bg-orange-50`
                     : idx < etapaAtual
@@ -693,13 +711,13 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
                 }`}
               >
                 <IconeEtapa 
-                  size={20} 
+                  size={18} 
                   className={`mx-auto mb-1 ${
                     idx === etapaAtual ? 'text-orange-600' :
                     idx < etapaAtual ? 'text-green-600' : 'text-gray-400'
                   }`}
                 />
-                <p className={`text-xs font-medium ${
+                <p className={`text-xs font-medium leading-tight ${
                   idx === etapaAtual ? 'text-orange-600' :
                   idx < etapaAtual ? 'text-green-600' : 'text-gray-500'
                 }`}>
@@ -738,9 +756,9 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
           {etapaAtual > 0 && (
             <button
               onClick={etapaAnterior}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-sm"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
               Voltar
             </button>
           )}
@@ -748,18 +766,18 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
           {etapaAtual < etapas.length - 1 ? (
             <button
               onClick={proximaEtapa}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors shadow-lg"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors shadow-lg text-sm"
             >
               Próximo
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={salvando || uploadando}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-lg disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-lg disabled:opacity-50 text-sm"
             >
-              <Save size={20} />
+              <Save size={18} />
               {uploadando ? 'Enviando...' : salvando ? 'Salvando...' : modoEdicao ? 'Atualizar' : 'Cadastrar'}
             </button>
           )}

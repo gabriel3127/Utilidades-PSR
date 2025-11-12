@@ -27,8 +27,8 @@ const Login = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-blue-900 text-white rounded-t-lg p-8 text-center">
-          <h1 className="text-3xl font-bold">PSR EMBALAGENS</h1>
-          <p className="text-lg mt-2">Sistema de Visitas Técnicas</p>
+          <h1 className="text-3xl font-bold"></h1>
+          <p className="text-lg mt-2">Utilidades PSR</p>
         </div>
         
         <div className="bg-white rounded-b-lg shadow-lg p-8">

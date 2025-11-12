@@ -1,4 +1,4 @@
-// App.jsx - VERSÃO CORRIGIDA
+// App.jsx - ADAPTADO PARA SEU TOAST EXISTENTE
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabase';
 import Login from './components/Login';
@@ -6,6 +6,8 @@ import ListaOcorrencias from './components/ListaOcorrencias';
 import DashboardGeral from './components/DashboardGeral';
 import Administracao from './components/Administracao';
 import DashboardVisitas from './components/DashboardVisitas';
+import NotificationBell from './components/Notificationbell';
+import { ToastContainer } from './components/ToastNotification'; // Importar seu toast
 import { LogOut, AlertTriangle, Truck, Settings, Menu, X, LayoutDashboard } from 'lucide-react';
 
 function App() {
@@ -23,7 +25,7 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
-        carregarPermissoes(session.user.id, false); // false = não resetar aba
+        carregarPermissoes(session.user.id, false);
       } else {
         setLoading(false);
       }
@@ -34,7 +36,7 @@ function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        carregarPermissoes(session.user.id, false); // false = não resetar aba
+        carregarPermissoes(session.user.id, false);
       } else {
         setUser(null);
         setUserInfo(null);
@@ -115,7 +117,6 @@ function App() {
 
       setPermissions(permData);
 
-      // SÓ define aba inicial no primeiro load ou se resetarAba for true
       if (resetarAba) {
         if (permData.pode_acessar_ocorrencias) {
           setAbaAtiva('Dashboard');
@@ -148,6 +149,31 @@ function App() {
     setAbaAtiva(abaId);
     setMenuMobileAberto(false);
   };
+
+  // Callback para quando uma nova notificação chegar
+  const handleNovaNotificacao = (notificacao) => {
+  console.log('🎯 handleNovaNotificacao CHAMADO!', notificacao);
+  console.log('🎯 Tipo:', notificacao.tipo);
+  
+  // Converter formato da notificação para o formato do seu toast
+  const tipoToast = notificacao.tipo === 'ocorrencia' ? 'nova_ocorrencia' : 'nova_visita';
+  
+  console.log('🎯 Tipo Toast:', tipoToast);
+  console.log('🎯 Vai disparar evento para ToastContainer');
+  
+  // Disparar evento para o seu ToastContainer
+  const evento = new CustomEvent('nova-notificacao', {
+    detail: {
+      tipo: tipoToast,
+      titulo: notificacao.titulo,
+      descricao: notificacao.descricao
+    }
+  });
+  
+  console.log('🎯 Evento criado:', evento);
+  window.dispatchEvent(evento);
+  console.log('🎯 Evento disparado!');
+};
 
   if (loading) {
     return (
@@ -210,6 +236,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Toast Container - Seu componente existente */}
+      <ToastContainer />
+
       <header 
         className={`bg-white shadow-md border-b-4 border-orange-600 fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
           headerVisivel ? 'translate-y-0' : '-translate-y-full'
@@ -236,6 +265,9 @@ function App() {
           </div>
           
           <div className="flex items-center gap-2 md:gap-4">
+            {/* Sino de Notificações */}
+            <NotificationBell onNovaNotificacao={handleNovaNotificacao} />
+
             <div className="text-right hidden md:block">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-800 text-sm md:text-base">
@@ -261,6 +293,24 @@ function App() {
                 {userInfo.perfis.nome}
               </span>
             )}
+
+            {/* Botão de Teste */}
+            <button
+              onClick={() => {
+                console.log('🧪 Botão de teste clicado!');
+                const evento = new CustomEvent('nova-notificacao', {
+                  detail: {
+                    tipo: 'nova_ocorrencia',
+                    titulo: '🧪 TESTE Manual',
+                    descricao: 'Se você está vendo isso, o toast funciona!'
+                  }
+                });
+                window.dispatchEvent(evento);
+              }}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg text-xs"
+            >
+              🧪 Testar Toast
+            </button>
 
             <button
               onClick={handleLogout}

@@ -167,20 +167,34 @@ const FormularioVisita = ({ onSalvar }) => {
     }
   };
 
-  const BotaoOpcao = ({ opcao, selecionado, onClick, cor = 'blue' }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-3 rounded-lg border-2 transition-all font-medium text-sm ${
-        selecionado
-          ? `bg-${cor}-600 text-white border-${cor}-600 shadow-lg scale-105`
-          : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400 hover:shadow-md active:scale-95'
-      }`}
-    >
-      {selecionado && <Check size={16} className="inline mr-1" />}
-      {opcao}
-    </button>
-  );
+  const BotaoOpcao = ({ opcao, selecionado, onClick, cor = 'blue' }) => {
+    const getCoresBotao = (cor, selecionado) => {
+      if (selecionado) {
+        switch (cor) {
+          case 'green': return 'bg-green-600 text-white border-green-600';
+          case 'red': return 'bg-red-600 text-white border-red-600';
+          case 'orange': return 'bg-orange-600 text-white border-orange-600';
+          case 'yellow': return 'bg-yellow-500 text-white border-yellow-500';
+          case 'gray': return 'bg-gray-600 text-white border-gray-600';
+          default: return 'bg-blue-600 text-white border-blue-600';
+        }
+      }
+      return 'bg-white border-gray-300 text-gray-700 hover:border-blue-400 hover:shadow-md active:scale-95';
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`px-3 py-2 text-xs font-medium rounded-lg border-2 transition-all min-h-[44px] flex items-center justify-center ${getCoresBotao(cor, selecionado)} ${
+          selecionado ? 'shadow-lg scale-105' : ''
+        }`}
+      >
+        {selecionado && <Check size={14} className="mr-1" />}
+        <span className="text-center leading-tight">{opcao}</span>
+      </button>
+    );
+  };
 
   const RatingEstrelas = ({ valor, onChange }) => {
     const opcoes = [
@@ -192,24 +206,24 @@ const FormularioVisita = ({ onSalvar }) => {
     ];
 
     return (
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-1">
         {opcoes.map((opcao) => (
           <button
             key={opcao.value}
             type="button"
             onClick={() => onChange(opcao.value)}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
+            className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all min-h-[70px] ${
               valor === opcao.value
                 ? 'bg-yellow-500 text-white border-yellow-600 shadow-lg'
                 : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400'
             }`}
           >
             <Star 
-              size={20} 
+              size={16} 
               fill={valor === opcao.value ? 'white' : 'none'}
               className="mb-1"
             />
-            <span className="text-xs font-medium">{opcao.label}</span>
+            <span className="text-xs font-medium text-center leading-tight">{opcao.label}</span>
           </button>
         ))}
       </div>
@@ -331,8 +345,15 @@ const FormularioVisita = ({ onSalvar }) => {
           value={formData.comentariosFeedback}
           onChange={(e) => handleChange('comentariosFeedback', e.target.value)}
           placeholder="Observações sobre as avaliações..."
-          className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          maxLength="300"
+          className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
         />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Máximo 300 caracteres</span>
+          <span className={formData.comentariosFeedback.length > 250 ? 'text-orange-600 font-medium' : ''}>
+            {formData.comentariosFeedback.length}/300
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -374,7 +395,7 @@ const FormularioVisita = ({ onSalvar }) => {
 
       <div>
         <label className="block text-sm font-semibold mb-3 text-gray-700">Volume PSR (%)</label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {['0-25', '26-50', '51-75', '76-100'].map(vol => (
             <BotaoOpcao
               key={vol}
@@ -412,8 +433,15 @@ const FormularioVisita = ({ onSalvar }) => {
           value={formData.motivoNaoCompra}
           onChange={(e) => handleChange('motivoNaoCompra', e.target.value)}
           placeholder="Preço, qualidade, desconhecimento..."
-          className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          maxLength="400"
+          className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
         />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Máximo 400 caracteres</span>
+          <span className={formData.motivoNaoCompra.length > 350 ? 'text-orange-600 font-medium' : ''}>
+            {formData.motivoNaoCompra.length}/400
+          </span>
+        </div>
       </div>
 
       <div>
@@ -422,8 +450,15 @@ const FormularioVisita = ({ onSalvar }) => {
           value={formData.produtosNaoOferecemos}
           onChange={(e) => handleChange('produtosNaoOferecemos', e.target.value)}
           placeholder="Produtos, volumes, fornecedores..."
-          className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          maxLength="400"
+          className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
         />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Máximo 400 caracteres</span>
+          <span className={formData.produtosNaoOferecemos.length > 350 ? 'text-orange-600 font-medium' : ''}>
+            {formData.produtosNaoOferecemos.length}/400
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -489,13 +524,20 @@ const FormularioVisita = ({ onSalvar }) => {
               value={formData.detalheReclamacao}
               onChange={(e) => handleChange('detalheReclamacao', e.target.value)}
               placeholder="Descreva a reclamação..."
-              className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              maxLength="400"
+              className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
             />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Máximo 400 caracteres</span>
+              <span className={formData.detalheReclamacao.length > 350 ? 'text-orange-600 font-medium' : ''}>
+                {formData.detalheReclamacao.length}/400
+              </span>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-semibold mb-3 text-gray-700">Gravidade</label>
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               {['Comentário pontual', 'Incômodo moderado', 'Problema significativo'].map(grav => (
                 <BotaoOpcao
                   key={grav}
@@ -514,8 +556,15 @@ const FormularioVisita = ({ onSalvar }) => {
               value={formData.acaoProposta}
               onChange={(e) => handleChange('acaoProposta', e.target.value)}
               placeholder="Solução proposta..."
-              className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              maxLength="300"
+              className="w-full border-2 border-gray-300 rounded-lg p-3 h-24 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
             />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Máximo 300 caracteres</span>
+              <span className={formData.acaoProposta.length > 250 ? 'text-orange-600 font-medium' : ''}>
+                {formData.acaoProposta.length}/300
+              </span>
+            </div>
           </div>
 
           <div>
@@ -546,8 +595,15 @@ const FormularioVisita = ({ onSalvar }) => {
           value={formData.observacoesGerais}
           onChange={(e) => handleChange('observacoesGerais', e.target.value)}
           placeholder="Impressões, condições, relacionamento..."
-          className="w-full border-2 border-gray-300 rounded-lg p-3 h-32 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          maxLength="500"
+          className="w-full border-2 border-gray-300 rounded-lg p-3 h-32 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
         />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Máximo 500 caracteres</span>
+          <span className={formData.observacoesGerais.length > 450 ? 'text-orange-600 font-medium' : ''}>
+            {formData.observacoesGerais.length}/500
+          </span>
+        </div>
       </div>
 
       <div>
@@ -556,8 +612,15 @@ const FormularioVisita = ({ onSalvar }) => {
           value={formData.proximosPassos}
           onChange={(e) => handleChange('proximosPassos', e.target.value)}
           placeholder="Enviar orçamento, agendar visita..."
-          className="w-full border-2 border-gray-300 rounded-lg p-3 h-32 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          maxLength="400"
+          className="w-full border-2 border-gray-300 rounded-lg p-3 h-32 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
         />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Máximo 400 caracteres</span>
+          <span className={formData.proximosPassos.length > 350 ? 'text-orange-600 font-medium' : ''}>
+            {formData.proximosPassos.length}/400
+          </span>
+        </div>
       </div>
 
       <div>
@@ -603,7 +666,7 @@ const FormularioVisita = ({ onSalvar }) => {
               <button
                 key={etapa.id}
                 onClick={() => setEtapaAtual(idx)}
-                className={`flex-1 min-w-[80px] p-3 border-b-4 transition-all ${
+                className={`flex-1 min-w-[70px] p-2 border-b-4 transition-all ${
                   idx === etapaAtual
                     ? `${etapa.cor.replace('bg-', 'border-')} bg-blue-50`
                     : idx < etapaAtual
@@ -612,13 +675,13 @@ const FormularioVisita = ({ onSalvar }) => {
                 }`}
               >
                 <IconeEtapa 
-                  size={20} 
+                  size={18} 
                   className={`mx-auto mb-1 ${
                     idx === etapaAtual ? 'text-blue-600' :
                     idx < etapaAtual ? 'text-green-600' : 'text-gray-400'
                   }`}
                 />
-                <p className={`text-xs font-medium ${
+                <p className={`text-xs font-medium leading-tight ${
                   idx === etapaAtual ? 'text-blue-600' :
                   idx < etapaAtual ? 'text-green-600' : 'text-gray-500'
                 }`}>
@@ -655,9 +718,9 @@ const FormularioVisita = ({ onSalvar }) => {
           {etapaAtual > 0 && (
             <button
               onClick={etapaAnterior}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-sm"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
               Voltar
             </button>
           )}
@@ -665,18 +728,18 @@ const FormularioVisita = ({ onSalvar }) => {
           {etapaAtual < etapas.length - 1 ? (
             <button
               onClick={proximaEtapa}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg text-sm"
             >
               Próximo
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={salvando}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-lg disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-lg disabled:opacity-50 text-sm"
             >
-              <Check size={20} />
+              <Check size={18} />
               {salvando ? 'Salvando...' : 'Finalizar'}
             </button>
           )}

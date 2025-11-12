@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { Shield, Edit, Save, X, ChevronRight, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Shield, Edit, Save, X, ChevronRight, Plus, Trash2, AlertCircle, Bell } from 'lucide-react';
 
 const GerenciarPerfis = () => {
   const [perfis, setPerfis] = useState([]);
@@ -10,6 +10,10 @@ const GerenciarPerfis = () => {
   const [setores, setSetores] = useState([]);
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState([]);
   const [setoresSelecionados, setSetoresSelecionados] = useState([]);
+  const [notificacoes, setNotificacoes] = useState({
+    ocorrencia: false,
+    visita: false
+  });
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   
@@ -31,6 +35,7 @@ const GerenciarPerfis = () => {
       carregarPermissoes();
       carregarEmpresasPerfil();
       carregarSetoresPerfil();
+      carregarNotificacoesPerfil();
     }
   }, [perfilSelecionado]);
 
@@ -100,6 +105,32 @@ const GerenciarPerfis = () => {
     }
   };
 
+  const carregarNotificacoesPerfil = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('perfis_notificacoes')
+        .select('tipo_notificacao, recebe_notificacao')
+        .eq('perfil_id', perfilSelecionado.id);
+
+      if (error) throw error;
+
+      // Converter array em objeto
+      const notifConfig = {
+        ocorrencia: false,
+        visita: false
+      };
+
+      data.forEach(item => {
+        notifConfig[item.tipo_notificacao] = item.recebe_notificacao;
+      });
+
+      setNotificacoes(notifConfig);
+    } catch (error) {
+      console.error('Erro ao carregar notificações do perfil:', error);
+      setNotificacoes({ ocorrencia: false, visita: false });
+    }
+  };
+
   const abrirModalPerfil = (perfil = null) => {
     setEditandoPerfil(perfil);
     setFormPerfil(perfil ? {
@@ -153,6 +184,16 @@ const GerenciarPerfis = () => {
 
         if (permError) throw permError;
 
+        // Criar configurações de notificações padrão
+        const { error: notifError } = await supabase
+          .from('perfis_notificacoes')
+          .insert([
+            { perfil_id: novoPerfil.id, tipo_notificacao: 'ocorrencia', recebe_notificacao: false },
+            { perfil_id: novoPerfil.id, tipo_notificacao: 'visita', recebe_notificacao: false }
+          ]);
+
+        if (notifError) throw notifError;
+
         alert('✅ Perfil criado com sucesso!');
       }
 
@@ -175,7 +216,7 @@ const GerenciarPerfis = () => {
 
   const excluirPerfil = async (perfil) => {
     // Não permitir excluir perfil Admin
-    if (perfil.nome === 'Admin') {
+    if (perfil.nome === 'Admin' || perfil.nome === 'Administrador') {
       alert('⚠️ Não é possível excluir o perfil Admin!');
       return;
     }
@@ -227,6 +268,13 @@ const GerenciarPerfis = () => {
     }
   };
 
+  const handleNotificacaoToggle = (tipo) => {
+    setNotificacoes({
+      ...notificacoes,
+      [tipo]: !notificacoes[tipo]
+    });
+  };
+
 const salvarPermissoes = async () => {
     if (!perfilSelecionado || !permissoes) return;
 
@@ -253,19 +301,18 @@ const salvarPermissoes = async () => {
         if (deleteEmpresasError) throw deleteEmpresasError;
 
         // 2.2 Inserir apenas as empresas selecionadas (se houver)
-        // Se empresasSelecionadas está vazio = acesso total (não insere nada)
         if (empresasSelecionadas.length > 0) {
-        const empresasToInsert = empresasSelecionadas.map(empresa_id => ({
-            perfil_id: perfilSelecionado.id,
-            empresa_id: empresa_id,
-            created_at: new Date().toISOString()
-        }));
+          const empresasToInsert = empresasSelecionadas.map(empresa_id => ({
+              perfil_id: perfilSelecionado.id,
+              empresa_id: empresa_id,
+              created_at: new Date().toISOString()
+          }));
 
-        const { error: insertEmpresasError } = await supabase
-            .from('perfis_empresas')
-            .insert(empresasToInsert);
+          const { error: insertEmpresasError } = await supabase
+              .from('perfis_empresas')
+              .insert(empresasToInsert);
 
-        if (insertEmpresasError) throw insertEmpresasError;
+          if (insertEmpresasError) throw insertEmpresasError;
         }
 
         // 3. GERENCIAR SETORES
@@ -278,27 +325,56 @@ const salvarPermissoes = async () => {
         if (deleteSetoresError) throw deleteSetoresError;
 
         // 3.2 Inserir apenas os setores selecionados (se houver)
-        // Se setoresSelecionados está vazio = acesso total (não insere nada)
         if (setoresSelecionados.length > 0) {
-        const setoresToInsert = setoresSelecionados.map(setor_id => ({
-            perfil_id: perfilSelecionado.id,
-            setor_id: setor_id,
-            created_at: new Date().toISOString()
-        }));
+          const setoresToInsert = setoresSelecionados.map(setor_id => ({
+              perfil_id: perfilSelecionado.id,
+              setor_id: setor_id,
+              created_at: new Date().toISOString()
+          }));
 
-        const { error: insertSetoresError } = await supabase
-            .from('perfis_setores')
-            .insert(setoresToInsert);
+          const { error: insertSetoresError } = await supabase
+              .from('perfis_setores')
+              .insert(setoresToInsert);
 
-        if (insertSetoresError) throw insertSetoresError;
+          if (insertSetoresError) throw insertSetoresError;
         }
 
-        // 4. SUCESSO!
+        // 4. GERENCIAR NOTIFICAÇÕES
+        // 4.1 Deletar configurações existentes
+        const { error: deleteNotifError } = await supabase
+          .from('perfis_notificacoes')
+          .delete()
+          .eq('perfil_id', perfilSelecionado.id);
+
+        if (deleteNotifError) throw deleteNotifError;
+
+        // 4.2 Inserir novas configurações
+        const notifToInsert = [
+          {
+            perfil_id: perfilSelecionado.id,
+            tipo_notificacao: 'ocorrencia',
+            recebe_notificacao: notificacoes.ocorrencia
+          },
+          {
+            perfil_id: perfilSelecionado.id,
+            tipo_notificacao: 'visita',
+            recebe_notificacao: notificacoes.visita
+          }
+        ];
+
+        const { error: insertNotifError } = await supabase
+          .from('perfis_notificacoes')
+          .insert(notifToInsert);
+
+        if (insertNotifError) throw insertNotifError;
+
+        // 5. SUCESSO!
         alert('✅ Permissões salvas com sucesso!');
         
         // Recarregar dados para refletir as mudanças
         await carregarEmpresasPerfil();
         await carregarSetoresPerfil();
+        await carregarNotificacoesPerfil();
         
     } catch (error) {
         console.error('Erro ao salvar permissões:', error);
@@ -306,7 +382,7 @@ const salvarPermissoes = async () => {
     } finally {
         setSalvando(false);
     }
-    };
+};
 
   const permissoesConfig = [
     {
@@ -435,7 +511,7 @@ const salvarPermissoes = async () => {
                       <Edit size={14} />
                       Editar
                     </button>
-                    {perfil.nome !== 'Admin' && (
+                    {perfil.nome !== 'Admin' && perfil.nome !== 'Administrador' && (
                       <button
                         onClick={() => excluirPerfil(perfil)}
                         className="flex-1 text-red-600 hover:text-red-700 text-sm flex items-center justify-center gap-1"
@@ -485,6 +561,56 @@ const salvarPermissoes = async () => {
                     </div>
                   </div>
                 ))}
+
+                {/* NOVA SEÇÃO: Notificações */}
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <Bell className="text-yellow-500" size={20} />
+                    🔔 Notificações Automáticas
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Configure quais tipos de notificações este perfil deve receber automaticamente quando novos itens são criados.
+                  </p>
+
+                  <div className="space-y-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-yellow-100 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={notificacoes.ocorrencia}
+                        onChange={() => handleNotificacaoToggle('ocorrencia')}
+                        className="w-5 h-5 text-yellow-600 rounded focus:ring-2 focus:ring-yellow-500"
+                      />
+                      <div>
+                        <span className="text-gray-800 font-medium">📋 Novas Ocorrências</span>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Receber notificações quando uma nova ocorrência for criada
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-yellow-100 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={notificacoes.visita}
+                        onChange={() => handleNotificacaoToggle('visita')}
+                        className="w-5 h-5 text-yellow-600 rounded focus:ring-2 focus:ring-yellow-500"
+                      />
+                      <div>
+                        <span className="text-gray-800 font-medium">🚗 Novas Visitas Técnicas</span>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Receber notificações quando uma nova visita técnica for registrada
+                        </p>
+                      </div>
+                    </label>
+
+                    <div className="mt-4 p-3 bg-white border border-yellow-300 rounded-lg">
+                      <p className="text-xs text-gray-600">
+                        <strong>ℹ️ Nota:</strong> Os usuários não receberão notificações de itens criados por eles mesmos. 
+                        As notificações aparecem no sino 🔔 no topo da página.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Empresas e Setores para Ocorrências */}
                 <div className="border-t pt-6">
