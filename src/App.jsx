@@ -294,24 +294,6 @@ function App() {
               </span>
             )}
 
-            {/* Botão de Teste */}
-            <button
-              onClick={() => {
-                console.log('🧪 Botão de teste clicado!');
-                const evento = new CustomEvent('nova-notificacao', {
-                  detail: {
-                    tipo: 'nova_ocorrencia',
-                    titulo: '🧪 TESTE Manual',
-                    descricao: 'Se você está vendo isso, o toast funciona!'
-                  }
-                });
-                window.dispatchEvent(evento);
-              }}
-              className="px-3 py-2 bg-purple-600 text-white rounded-lg text-xs"
-            >
-              🧪 Testar Toast
-            </button>
-
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 md:gap-2 bg-red-600 text-white px-2 md:px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm md:text-base"

@@ -116,8 +116,8 @@ const ToastContainer = () => {
   };
 
   return (
-    // POSIÇÃO CORRIGIDA: Abaixo do header (top-[180px]) e sempre visível
-    <div className="fixed top-[180px] right-4 z-[100] space-y-2 pointer-events-none">
+    // STICKY: Rola junto com a página, mas sempre 20px abaixo do topo
+    <div className="sticky top-20 right-4 float-right z-[100] space-y-2 pointer-events-none mr-4 mt-4">
       {toasts.map(toast => (
         <div key={toast.id} className="pointer-events-auto">
           <ToastNotification
