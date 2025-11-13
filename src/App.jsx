@@ -8,6 +8,7 @@ import Administracao from './components/Administracao';
 import DashboardVisitas from './components/DashboardVisitas';
 import NotificationBell from './components/Notificationbell';
 import { ToastContainer } from './components/ToastNotification'; // Importar seu toast
+import AppWithRoutes from './AppWithRoutes';
 import { LogOut, AlertTriangle, Truck, Settings, Menu, X, LayoutDashboard } from 'lucide-react';
 
 function App() {

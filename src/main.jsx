@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'  // ← ESTA LINHA DEVE EXISTIR!
-import App from './App.jsx'
+import './index.css'
+import AppWithRoutes from './AppWithRoutes.jsx' // ← Mudou
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <AppWithRoutes /> {/* ← Mudou */}
   </StrictMode>,
 )

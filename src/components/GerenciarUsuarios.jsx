@@ -96,61 +96,58 @@ const GerenciarUsuarios = () => {
     }
 
     try {
-      // 1. Criar usuário no Supabase Authentication
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.senha,
-        options: {
-          data: {
-            nome: formData.nome || formData.email.split('@')[0],
-            role: formData.role
-          },
-          emailRedirectTo: `${window.location.origin}/login`
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('Erro ao criar usuário no Authentication');
+      // Pegar token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Você precisa estar logado para criar usuários');
       }
 
-      // 2. Buscar o perfil_id baseado no nome do perfil
-      const { data: perfilData, error: perfilError } = await supabase
-        .from('perfis')
-        .select('id')
-        .eq('nome', formData.role)
-        .single();
+      // Chamar Edge Function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rapid-worker`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.senha,
+            nome: formData.nome || formData.email.split('@')[0],
+            role: formData.role // Nome do perfil (Admin, Gerente, etc)
+          })
+        }
+      );
 
-      if (perfilError) throw perfilError;
+      const result = await response.json();
 
-      // 3. Inserir/Atualizar na tabela users
-      const { error: upsertError } = await supabase
-        .from('users')
-        .upsert([{
-          id: authData.user.id,
-          email: formData.email,
-          nome: formData.nome || formData.email.split('@')[0],
-          perfil_id: perfilData.id
-        }], {
-          onConflict: 'id'
-        });
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
-      if (upsertError) throw upsertError;
-
-      alert('✅ Usuário convidado com sucesso!\n\nUm email de confirmação foi enviado para ' + formData.email);
+      alert('✅ Usuário criado com sucesso!\n\n' + 
+            'Email: ' + formData.email + '\n' +
+            'Role: ' + result.user.role + '\n' +
+            '🔒 Role salva com segurança em app_metadata');
+      
       setModalConvite(false);
       carregarDados();
+      
     } catch (error) {
       console.error('Erro ao convidar:', error);
       
-      // Mensagens de erro mais amigáveis
-      let mensagem = 'Erro ao convidar usuário: ';
+      let mensagem = 'Erro ao criar usuário: ';
       
-      if (error.message?.includes('already registered')) {
+      if (error.message?.includes('already registered') || error.message?.includes('já está cadastrado')) {
         mensagem = '⚠️ Este email já está cadastrado no sistema!';
       } else if (error.message?.includes('email')) {
-        mensagem = '⚠️ Email inválido ou já existe!';
+        mensagem = '⚠️ Email inválido!';
+      } else if (error.message?.includes('admin')) {
+        mensagem = '⚠️ Apenas administradores podem criar usuários!';
+      } else if (error.message?.includes('autenticado') || error.message?.includes('Token')) {
+        mensagem = '⚠️ Erro de autenticação. Faça logout e login novamente.';
       } else {
         mensagem += error.message;
       }
