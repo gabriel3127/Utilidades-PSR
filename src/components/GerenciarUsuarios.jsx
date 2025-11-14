@@ -266,7 +266,7 @@ const GerenciarUsuarios = () => {
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
           >
             <Plus size={18} />
-            Convidar Usuário
+            Criar Usuário
           </button>
         </div>
 

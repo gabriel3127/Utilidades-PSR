@@ -599,22 +599,24 @@ const ListaOcorrencias = ({ userRole, pode, userInfo }) => {
               className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 active:bg-gray-50"
             >
               {/* Cabeçalho do Card */}
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-orange-600">
-                      #{String(ocorrencia.id).slice(0, 8)}
-                    </span>
-                    {getStatusIcon(ocorrencia.status)}
-                  </div>
-                  <h3 className="font-semibold text-gray-900 text-base">
-                    {ocorrencia.cliente || 'Sem cliente'}
-                  </h3>
+              <div className="mb-3">
+                {/* Linha 1: ID e Status */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-bold text-orange-600">
+                    #{String(ocorrencia.id).slice(0, 8)}
+                  </span>
+                  {getStatusIcon(ocorrencia.status)}
                 </div>
                 
-                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPrioridadeColor(ocorrencia.prioridade)}`}>
-                  {ocorrencia.prioridade}
-                </span>
+                {/* Linha 2: Cliente (MAIOR) e Prioridade lado a lado */}
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-bold text-gray-900 text-lg flex-1 truncate">
+                    {ocorrencia.cliente || 'Sem cliente'}
+                  </h3>
+                  <span className={`px-3 py-1.5 rounded-full text-sm font-bold border-2 whitespace-nowrap flex-shrink-0 ${getPrioridadeColor(ocorrencia.prioridade)}`}>
+                    {ocorrencia.prioridade}
+                  </span>
+                </div>
               </div>
               
               {/* Info Badges */}
@@ -710,6 +712,7 @@ const ListaOcorrencias = ({ userRole, pode, userInfo }) => {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-xl font-bold">#{String(detalheSelecionado.id).slice(0, 8)}</h3>
+                  <p className="text-white text-lg font-bold">{detalheSelecionado.cliente || 'Sem cliente'}</p>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium bg-white ${
                     detalheSelecionado.prioridade === 'Alta' ? 'text-red-600' :
                     detalheSelecionado.prioridade === 'Média' ? 'text-yellow-600' :
@@ -718,7 +721,6 @@ const ListaOcorrencias = ({ userRole, pode, userInfo }) => {
                     {detalheSelecionado.prioridade}
                   </span>
                 </div>
-                <p className="text-orange-100 text-sm">{detalheSelecionado.cliente || 'Sem cliente'}</p>
               </div>
               <div className="flex gap-2">
                 {podeExcluir && (
@@ -788,45 +790,75 @@ const ListaOcorrencias = ({ userRole, pode, userInfo }) => {
                 )}
 
                 {/* Informações */}
+                {/* Histórico de Ações - NOVO */}
                 <div>
-                  <h4 className="font-bold text-sm mb-2 text-gray-800">Informações</h4>
-                  <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg space-y-2 text-sm">
-                    {detalheSelecionado.nfe && (
-                      <div>
-                        <span className="font-semibold">NFE:</span> {detalheSelecionado.nfe}
+                  <h4 className="font-bold text-sm mb-2 text-gray-800">Histórico</h4>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg divide-y divide-gray-200">
+                    
+                    {/* Criação */}
+                    <div className="p-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <div className="bg-green-100 p-1.5 rounded-full flex-shrink-0">
+                          <Plus size={14} className="text-green-700" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800">Criado</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {new Date(detalheSelecionado.created_at).toLocaleString('pt-BR')}
+                          </p>
+                          {detalheSelecionado.created_by_user && (
+                            <p className="text-xs text-blue-600 font-medium mt-0.5">
+                              por {detalheSelecionado.created_by_user.nome}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {detalheSelecionado.nota_retida && (
-                      <div className="bg-yellow-100 -mx-3 -my-2 p-3 rounded border border-yellow-200">
-                        <span className="font-semibold">Status da Nota:</span>
-                        <div className="mt-1 inline-flex items-center gap-1 text-yellow-700 font-bold">
-                          📋 Nota Retida no Cliente
+                    </div>
+
+                    {/* Última Edição */}
+                    {detalheSelecionado.updated_at && detalheSelecionado.updated_at !== detalheSelecionado.created_at && (
+                      <div className="p-3 text-sm">
+                        <div className="flex items-start gap-2">
+                          <div className="bg-blue-100 p-1.5 rounded-full flex-shrink-0">
+                            <Edit size={14} className="text-blue-700" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-800">Última Edição</p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {new Date(detalheSelecionado.updated_at).toLocaleString('pt-BR')}
+                            </p>
+                            {detalheSelecionado.updated_by_user && (
+                              <p className="text-xs text-blue-600 font-medium mt-0.5">
+                                por {detalheSelecionado.updated_by_user.nome}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
-                    <div>
-                      <span className="font-semibold">Empresa:</span> {detalheSelecionado.empresas?.nome || '-'}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Setor:</span> {detalheSelecionado.setores?.nome || '-'}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Tipo:</span> {detalheSelecionado.tipos_problema?.nome || '-'}
-                    </div>
-                    {detalheSelecionado.localizacao && (
-                      <div>
-                        <span className="font-semibold">Local:</span> {detalheSelecionado.localizacao}
+
+                    {/* Resolução */}
+                    {detalheSelecionado.status === 'Resolvido' && detalheSelecionado.resolved_at && (
+                      <div className="p-3 text-sm">
+                        <div className="flex items-start gap-2">
+                          <div className="bg-green-100 p-1.5 rounded-full flex-shrink-0">
+                            <CheckCircle size={14} className="text-green-700" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-800">Resolvido</p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {new Date(detalheSelecionado.resolved_at).toLocaleString('pt-BR')}
+                            </p>
+                            {detalheSelecionado.resolved_by_user && (
+                              <p className="text-xs text-green-600 font-medium mt-0.5">
+                                por {detalheSelecionado.resolved_by_user.nome}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
-                    <div className="pt-2 border-t">
-                      <span className="font-semibold">Criado em:</span>{' '}
-                      {new Date(detalheSelecionado.created_at).toLocaleString('pt-BR')}
-                      {detalheSelecionado.created_by_user && (
-                        <div className="text-xs text-gray-600 mt-1">
-                          por <span className="font-semibold text-blue-600">{detalheSelecionado.created_by_user.nome}</span>
-                        </div>
-                      )}
-                    </div>
+
                   </div>
                 </div>
               </div>
