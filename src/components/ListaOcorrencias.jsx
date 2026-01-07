@@ -665,7 +665,7 @@ const ListaOcorrencias = ({ userRole, pode, userInfo }) => {
 
               {/* Botões de Ação */}
               <div className="flex gap-2 pt-2 border-t">
-                {podeEditar && (
+                {podeEditar && ocorrencia.status !== 'Resolvido' && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -789,7 +789,90 @@ const ListaOcorrencias = ({ userRole, pode, userInfo }) => {
                   </div>
                 )}
 
-                {/* Informações */}
+                {/* Informações Principais */}
+                <div>
+                  <h4 className="font-bold text-sm mb-2 text-gray-800">Informações</h4>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg divide-y divide-gray-200">
+                    
+                    {/* NFE */}
+                    <div className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">NFE</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {detalheSelecionado.nfe || 'Sem NFE'}
+                      </span>
+                    </div>
+
+                    {/* Empresa */}
+                    <div className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Empresa</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {detalheSelecionado.empresas?.nome || '-'}
+                      </span>
+                    </div>
+
+                    {/* Setor */}
+                    <div className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Setor</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {detalheSelecionado.setores?.nome || '-'}
+                      </span>
+                    </div>
+
+                    {/* Tipo de Problema */}
+                    <div className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Tipo de Problema</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {detalheSelecionado.tipos_problema?.nome || '-'}
+                      </span>
+                    </div>
+
+                    {/* Prioridade */}
+                    <div className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Prioridade</span>
+                      </div>
+                      <span className={`text-sm font-bold px-3 py-1 rounded-full ${getPrioridadeColor(detalheSelecionado.prioridade)}`}>
+                        {detalheSelecionado.prioridade}
+                      </span>
+                    </div>
+
+                    {/* Localização */}
+                    <div className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Localização</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {detalheSelecionado.localizacao || 'Não informado'}
+                      </span>
+                    </div>
+
+                    {/* Nota Retida - DESTAQUE */}
+                    {detalheSelecionado.nota_retida && (
+                      <div className="p-3 bg-yellow-50">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">⚠️</span>
+                          <span className="text-sm font-bold text-yellow-800">
+                            Nota Fiscal Retida
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
                 {/* Histórico de Ações - NOVO */}
                 <div>
                   <h4 className="font-bold text-sm mb-2 text-gray-800">Histórico</h4>

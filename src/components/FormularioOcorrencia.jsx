@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { 
   AlertTriangle, 
@@ -33,6 +33,8 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     empresas: [],
     setores: []
   });
+
+  const primeiraRenderizacao = useRef(true);
   
   const [formData, setFormData] = useState({
     cliente: '',
@@ -127,6 +129,7 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
   useEffect(() => {
     if (ocorrenciaParaEditar) {
       setModoEdicao(true);
+      primeiraRenderizacao.current = true;
       setFormData({
         cliente: ocorrenciaParaEditar.cliente || '',
         nfe: ocorrenciaParaEditar.nfe || '',
@@ -207,6 +210,13 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
       );
       setTiposProblemaFiltrados(tiposFiltrados);
       
+      // Se for a primeira renderização de edição, não limpar
+      if (primeiraRenderizacao.current && modoEdicao) {
+        primeiraRenderizacao.current = false;
+        return; // Sai aqui, não limpa
+      }
+      
+      // Caso contrário, verifica se o tipo existe
       if (formData.tipo_problema_id) {
         const tipoExiste = tiposFiltrados.some(
           tipo => tipo.id === parseInt(formData.tipo_problema_id)
@@ -217,9 +227,11 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
       }
     } else {
       setTiposProblemaFiltrados([]);
-      setFormData(prev => ({ ...prev, tipo_problema_id: '' }));
+      if (!modoEdicao) {
+        setFormData(prev => ({ ...prev, tipo_problema_id: '' }));
+      }
     }
-  }, [formData.setor_id, tiposProblema]);
+  }, [formData.setor_id, tiposProblema, modoEdicao]);
 
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -411,7 +423,7 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-semibold mb-2 text-gray-700">
-          Cliente *
+          Solicitante/Origem: *
         </label>
         <input
           type="text"
@@ -424,7 +436,7 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
       </div>
 
       <div>
-        <label className="block text-sm font-semibold mb-2 text-gray-700">NFE</label>
+        <label className="block text-sm font-semibold mb-2 text-gray-700">Numero do documento: *</label>
         <input
           type="text"
           value={formData.nfe}
