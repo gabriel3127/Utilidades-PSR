@@ -242,18 +242,23 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     try {
       console.log('📸 Original:', (file.size / 1024 / 1024).toFixed(2), 'MB');
       
+      // ⭐ CONFIGURAÇÃO RECOMENDADA
       const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true
+        maxSizeMB: 0.5,              // 500KB
+        maxWidthOrHeight: 1280,      // HD padrão
+        useWebWorker: true,
+        fileType: 'image/jpeg',
+        initialQualidade: 0.7        // 70% qualidade
       };
       
       const compressedFile = await imageCompression(file, options);
+      
       console.log('✅ Comprimido:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
+      console.log('📊 Economia:', ((1 - compressedFile.size / file.size) * 100).toFixed(0), '%');
       
       return compressedFile;
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('❌ Erro:', error);
       return file;
     }
   };
