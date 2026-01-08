@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
+import imageCompression from 'browser-image-compression';
 import { 
   AlertTriangle, 
   Save, 
@@ -237,7 +238,27 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     setFormData({ ...formData, [field]: value });
   };
 
-  const handleImagemChange = (e) => {
+  const comprimirImagem = async (file) => {
+    try {
+      console.log('📸 Original:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+      
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      console.log('✅ Comprimido:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
+      
+      return compressedFile;
+    } catch (error) {
+      console.error('Erro:', error);
+      return file;
+    }
+  };
+
+  const handleImagemChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -251,13 +272,16 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
       return;
     }
 
-    setImagemFile(file);
+    setUploadando(true);
+    const compressedFile = await comprimirImagem(file);
+    setImagemFile(compressedFile);
+    setUploadando(false);
     
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagemPreview(reader.result);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressedFile);
   };
 
   const removerImagem = () => {
