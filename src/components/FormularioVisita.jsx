@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { saveVisitOffline } from '../services/offlineSync';
+
 import { 
   Clipboard, 
   Briefcase, 
@@ -17,6 +20,7 @@ import {
 const FormularioVisita = ({ onSalvar }) => {
   const [etapaAtual, setEtapaAtual] = useState(0);
   const [salvando, setSalvando] = useState(false);
+  const { isOnline } = useOnlineStatus();
   const [formData, setFormData] = useState({
     dataVisita: new Date().toISOString().split('T')[0],
     nomeConsultor: '',
@@ -120,6 +124,48 @@ const FormularioVisita = ({ onSalvar }) => {
     setSalvando(true);
 
     try {
+      // ✅ VERIFICAR SE ESTÁ OFFLINE
+      if (!isOnline) {
+        console.log('📴 Modo offline detectado, salvando localmente...');
+        
+        const offlineData = {
+          user_id: 'offline-user',
+          created_by: 'offline-user',
+          data_visita: formData.dataVisita,
+          nome_consultor: formData.nomeConsultor,
+          nome_cliente: formData.nomeCliente,
+          pessoa_contato: formData.pessoaContato,
+          segmento_cliente: formData.segmentoCliente,
+          porte_cliente: formData.porteCliente,
+          avaliacao_atendimento: formData.avaliacaoAtendimento,
+          avaliacao_variedade: formData.avaliacaoVariedade,
+          avaliacao_entrega: formData.avaliacaoEntrega,
+          comentarios_feedback: formData.comentariosFeedback,
+          produtos_utilizados: formData.produtosUtilizados,
+          volume_percentual: formData.volumePercentual,
+          motivo_nao_compra: formData.motivoNaoCompra,
+          produtos_nao_oferecemos: formData.produtosNaoOferecemos,
+          interesse_expandir: formData.interesseExpandir,
+          tem_reclamacao: formData.temReclamacao,
+          tipos_reclamacao: formData.tiposReclamacao,
+          detalhe_reclamacao: formData.detalheReclamacao,
+          gravidade_reclamacao: formData.gravidadeReclamacao,
+          acao_proposta: formData.acaoProposta,
+          satisfacao_solucao: formData.satisfacaoSolucao,
+          observacoes_gerais: formData.observacoesGerais,
+          proximos_passos: formData.proximosPassos,
+          prioridade_acompanhamento: formData.prioridadeAcompanhamento
+        };
+        
+        await saveVisitOffline(offlineData);
+        alert('📴 Visita salva offline! Será sincronizada quando voltar online.');
+        
+        if (onSalvar) onSalvar();
+        setSalvando(false);
+        return;
+      }
+
+      // ✅ ONLINE - CÓDIGO ORIGINAL
       const { data: { user } } = await supabase.auth.getUser();
 
       const { error } = await supabase
@@ -127,6 +173,7 @@ const FormularioVisita = ({ onSalvar }) => {
         .insert([
           {
             user_id: user.id,
+            created_by: user.id,
             data_visita: formData.dataVisita,
             nome_consultor: formData.nomeConsultor,
             nome_cliente: formData.nomeCliente,

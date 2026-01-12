@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import imageCompression from 'browser-image-compression';
+// ========== NOVOS IMPORTS PARA MODO OFFLINE ==========
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { saveOccurrenceOffline } from '../services/offlineSync';
+// =====================================================
+
 import { 
   AlertTriangle, 
   Save, 
@@ -16,7 +21,22 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 
+import { 
+  cacheEmpresas, 
+  cacheSetores, 
+  cacheTiposProblema,
+  cacheUsuario,
+  getCachedEmpresas,
+  getCachedSetores,
+  getCachedTiposProblema,
+  getCachedUsuario
+} from '../services/offlineSync';
+
 const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userInfo }) => {
+  // ========== NOVO HOOK DE CONEXÃO ==========
+  const { isOnline } = useOnlineStatus();
+  // =========================================
+  
   const [etapaAtual, setEtapaAtual] = useState(0);
   const [salvando, setSalvando] = useState(false);
   const [uploadando, setUploadando] = useState(false);
@@ -91,10 +111,20 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
   useEffect(() => {
     carregarDadosAuxiliares();
     carregarUsuarioLogado();
-    carregarRestricoes();
-  }, []);
+    
+    // Só carregar restrições se estiver online
+    if (isOnline) {
+      carregarRestricoes();
+    }
+  }, [isOnline]); // ← ADICIONAR isOnline como dependência
 
   const carregarRestricoes = async () => {
+    // Só carregar restrições se estiver online
+    if (!isOnline) {
+      console.log('📴 Modo offline: sem restrições de perfil');
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -121,7 +151,6 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
         empresas: empresasRestricoes?.map(r => r.empresa_id) || [],
         setores: setoresRestricoes?.map(r => r.setor_id) || []
       });
-
     } catch (error) {
       console.error('Erro ao carregar restrições:', error);
     }
@@ -151,33 +180,101 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
 
   const carregarUsuarioLogado = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUsuarioLogado({
-          id: user.id,
-          nome: user.user_metadata?.nome || user.email?.split('@')[0] || 'Usuário',
-          email: user.email
-        });
+      if (isOnline) {
+        // Carregar online
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const userInfo = {
+            id: user.id,
+            nome: user.user_metadata?.nome || user.email?.split('@')[0] || 'Usuário',
+            email: user.email
+          };
+          setUsuarioLogado(userInfo);
+          
+          // CACHEAR para uso offline
+          cacheUsuario(userInfo);
+        }
+      } else {
+        // Carregar do cache
+        console.log('📴 Modo offline: carregando usuário do cache');
+        const cachedUser = getCachedUsuario();
+        if (cachedUser) {
+          setUsuarioLogado(cachedUser);
+        } else {
+          // Usuário genérico offline
+          setUsuarioLogado({
+            id: 'offline-user',
+            nome: 'Usuário Offline',
+            email: 'offline@local'
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
+      
+      // Fallback para cache
+      const cachedUser = getCachedUsuario();
+      if (cachedUser) {
+        setUsuarioLogado(cachedUser);
+      } else {
+        setUsuarioLogado({
+          id: 'offline-user',
+          nome: 'Usuário Offline',
+          email: 'offline@local'
+        });
+      }
     }
   };
 
   const carregarDadosAuxiliares = async () => {
-    const [
-      { data: empresasData },
-      { data: setoresData },
-      { data: tiposProblemaData }
-    ] = await Promise.all([
-      supabase.from('empresas').select('*').order('nome'),
-      supabase.from('setores').select('*').order('nome'),
-      supabase.from('tipos_problema').select('*').order('nome')
-    ]);
+    try {
+      // Tentar carregar online
+      if (isOnline) {
+        const [
+          { data: empresasData },
+          { data: setoresData },
+          { data: tiposProblemaData }
+        ] = await Promise.all([
+          supabase.from('empresas').select('*').order('nome'),
+          supabase.from('setores').select('*').order('nome'),
+          supabase.from('tipos_problema').select('*').order('nome')
+        ]);
 
-    setEmpresas(empresasData || []);
-    setSetores(setoresData || []);
-    setTiposProblema(tiposProblemaData || []);
+        setEmpresas(empresasData || []);
+        setSetores(setoresData || []);
+        setTiposProblema(tiposProblemaData || []);
+
+        // CACHEAR para uso offline
+        if (empresasData) await cacheEmpresas(empresasData);
+        if (setoresData) await cacheSetores(setoresData);
+        if (tiposProblemaData) await cacheTiposProblema(tiposProblemaData);
+      } else {
+        // Carregar do cache
+        console.log('📴 Modo offline: carregando dados do cache');
+        const cachedEmpresas = getCachedEmpresas();
+        const cachedSetores = getCachedSetores();
+        const cachedTipos = getCachedTiposProblema();
+
+        setEmpresas(cachedEmpresas);
+        setSetores(cachedSetores);
+        setTiposProblema(cachedTipos);
+
+        if (cachedEmpresas.length === 0 || cachedSetores.length === 0) {
+          console.warn('⚠️ Cache vazio! Use o sistema online primeiro.');
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados auxiliares:', error);
+      
+      // Fallback para cache se houver erro
+      const cachedEmpresas = getCachedEmpresas();
+      const cachedSetores = getCachedSetores();
+      const cachedTipos = getCachedTiposProblema();
+
+      setEmpresas(cachedEmpresas);
+      setSetores(cachedSetores);
+      setTiposProblema(cachedTipos);
+    }
   };
 
   useEffect(() => {
@@ -211,13 +308,11 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
       );
       setTiposProblemaFiltrados(tiposFiltrados);
       
-      // Se for a primeira renderização de edição, não limpar
       if (primeiraRenderizacao.current && modoEdicao) {
         primeiraRenderizacao.current = false;
-        return; // Sai aqui, não limpa
+        return;
       }
       
-      // Caso contrário, verifica se o tipo existe
       if (formData.tipo_problema_id) {
         const tipoExiste = tiposFiltrados.some(
           tipo => tipo.id === parseInt(formData.tipo_problema_id)
@@ -242,13 +337,12 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     try {
       console.log('📸 Original:', (file.size / 1024 / 1024).toFixed(2), 'MB');
       
-      // ⭐ CONFIGURAÇÃO RECOMENDADA
       const options = {
-        maxSizeMB: 0.5,              // 500KB
-        maxWidthOrHeight: 1280,      // HD padrão
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1280,
         useWebWorker: true,
         fileType: 'image/jpeg',
-        initialQualidade: 0.7        // 70% qualidade
+        initialQuality: 0.7
       };
       
       const compressedFile = await imageCompression(file, options);
@@ -267,8 +361,8 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('❌ Imagem muito grande! Máximo 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      alert('❌ Imagem muito grande! Máximo 10MB');
       return;
     }
 
@@ -337,7 +431,11 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
     }
   };
 
+  // =====================================================
+  // FUNÇÃO handleSubmit MODIFICADA COM MODO OFFLINE
+  // =====================================================
   const handleSubmit = async () => {
+    // Validação
     if (!formData.cliente || formData.cliente.trim() === '') {
       alert('❌ O campo Cliente é obrigatório!');
       setEtapaAtual(0);
@@ -359,6 +457,66 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
         return;
       }
 
+      // =============================================
+      // MODO OFFLINE - SALVAR LOCALMENTE
+      // =============================================
+      if (!isOnline) {
+        console.log('📴 Modo offline detectado, salvando localmente...');
+        
+        // Buscar nomes das entidades selecionadas
+        const empresaSelecionada = empresas.find(e => e.id === parseInt(formData.empresa_id));
+        const setorSelecionado = setores.find(s => s.id === parseInt(formData.setor_id));
+        const tipoSelecionado = tiposProblema.find(t => t.id === parseInt(formData.tipo_problema_id));
+        
+        const offlineData = {
+          cliente: formData.cliente,
+          nfe: formData.nfe || null,
+          nota_retida: formData.nota_retida,
+          empresa_id: parseInt(formData.empresa_id),
+          empresa_nome: empresaSelecionada?.nome || '',
+          setor_id: parseInt(formData.setor_id),
+          setor_nome: setorSelecionado?.nome || '',
+          tipo_problema_id: parseInt(formData.tipo_problema_id),
+          tipo_problema_nome: tipoSelecionado?.nome || '',
+          status: formData.status,
+          prioridade: formData.prioridade,
+          localizacao: formData.localizacao || null,
+          descricao: formData.descricao || null,
+          imagemFile: imagemFile,
+          imagemPreview: imagemPreview
+        };
+
+        await saveOccurrenceOffline(offlineData);
+        
+        alert('✅ Ocorrência salva localmente!\n\n📱 Será enviada automaticamente quando a internet voltar.');
+        
+        // Limpar formulário
+        setFormData({
+          cliente: '',
+          nfe: '',
+          nota_retida: false,
+          empresa_id: '',
+          setor_id: '',
+          tipo_problema_id: '',
+          status: 'Em Andamento',
+          prioridade: 'Média',
+          localizacao: '',
+          descricao: ''
+        });
+        setImagemFile(null);
+        setImagemPreview(null);
+        setEtapaAtual(0);
+        
+        if (onSalvar) onSalvar();
+        setSalvando(false);
+        return;
+      }
+
+      // =============================================
+      // MODO ONLINE - ENVIAR PARA SUPABASE
+      // =============================================
+      console.log('🌐 Modo online, enviando para Supabase...');
+      
       const { data: { user } } = await supabase.auth.getUser();
 
       let imagemUrl = imagemPreview;
@@ -417,6 +575,7 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
       setSalvando(false);
     }
   };
+  // =====================================================
 
   const BotaoOpcao = ({ opcao, selecionado, onClick, cor = 'orange' }) => {
     const getCoresBotao = (cor, selecionado) => {
@@ -680,7 +839,7 @@ const FormularioOcorrencia = ({ onSalvar, userRole, ocorrenciaParaEditar, userIn
               <div>
                 <p className="text-gray-700 font-medium text-lg">Tirar Foto</p>
                 <p className="text-sm text-gray-500 mt-1">ou selecionar da galeria</p>
-                <p className="text-xs text-gray-400 mt-2">PNG, JPG até 5MB</p>
+                <p className="text-xs text-gray-400 mt-2">PNG, JPG até 10MB</p>
               </div>
             </div>
           </label>

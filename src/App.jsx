@@ -1,4 +1,4 @@
-// App.jsx - ADAPTADO PARA SEU TOAST EXISTENTE
+// App.jsx - COM MODO OFFLINE
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabase';
 import Login from './components/Login';
@@ -7,9 +7,15 @@ import DashboardGeral from './components/DashboardGeral';
 import Administracao from './components/Administracao';
 import DashboardVisitas from './components/DashboardVisitas';
 import NotificationBell from './components/Notificationbell';
-import { ToastContainer } from './components/ToastNotification'; // Importar seu toast
+import { ToastContainer } from './components/ToastNotification';
 import AppWithRoutes from './AppWithRoutes';
 import { LogOut, AlertTriangle, Truck, Settings, Menu, X, LayoutDashboard } from 'lucide-react';
+
+// ========== NOVOS IMPORTS PARA MODO OFFLINE ==========
+import OfflineStatus from './components/OfflineStatus';
+import { initDB, cleanOldData } from './services/offlineSync';
+import { startAutoSync } from './services/syncService';
+// =====================================================
 
 function App() {
   const [user, setUser] = useState(null);
@@ -21,6 +27,39 @@ function App() {
   
   const [headerVisivel, setHeaderVisivel] = useState(true);
   const [scrollAnterior, setScrollAnterior] = useState(0);
+
+  // =====================================================
+  // NOVO useEffect PARA INICIALIZAR MODO OFFLINE
+  // =====================================================
+  useEffect(() => {
+    console.log('🚀 Inicializando sistema offline...');
+    
+    // Inicializar IndexedDB
+    initDB()
+      .then(() => {
+        console.log('✅ Banco offline inicializado com sucesso');
+      })
+      .catch((error) => {
+        console.error('❌ Erro ao inicializar banco offline:', error);
+      });
+
+    // Limpar dados antigos (mais de 7 dias)
+    cleanOldData()
+      .catch((error) => {
+        console.error('❌ Erro ao limpar dados antigos:', error);
+      });
+
+    // Iniciar sincronização automática (a cada 5 minutos)
+    const stopAutoSync = startAutoSync();
+
+    // Cleanup quando o componente desmontar
+    return () => {
+      if (stopAutoSync) {
+        stopAutoSync();
+      }
+    };
+  }, []);
+  // =====================================================
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -151,30 +190,27 @@ function App() {
     setMenuMobileAberto(false);
   };
 
-  // Callback para quando uma nova notificação chegar
   const handleNovaNotificacao = (notificacao) => {
-  console.log('🎯 handleNovaNotificacao CHAMADO!', notificacao);
-  console.log('🎯 Tipo:', notificacao.tipo);
-  
-  // Converter formato da notificação para o formato do seu toast
-  const tipoToast = notificacao.tipo === 'ocorrencia' ? 'nova_ocorrencia' : 'nova_visita';
-  
-  console.log('🎯 Tipo Toast:', tipoToast);
-  console.log('🎯 Vai disparar evento para ToastContainer');
-  
-  // Disparar evento para o seu ToastContainer
-  const evento = new CustomEvent('nova-notificacao', {
-    detail: {
-      tipo: tipoToast,
-      titulo: notificacao.titulo,
-      descricao: notificacao.descricao
-    }
-  });
-  
-  console.log('🎯 Evento criado:', evento);
-  window.dispatchEvent(evento);
-  console.log('🎯 Evento disparado!');
-};
+    console.log('🎯 handleNovaNotificacao CHAMADO!', notificacao);
+    console.log('🎯 Tipo:', notificacao.tipo);
+    
+    const tipoToast = notificacao.tipo === 'ocorrencia' ? 'nova_ocorrencia' : 'nova_visita';
+    
+    console.log('🎯 Tipo Toast:', tipoToast);
+    console.log('🎯 Vai disparar evento para ToastContainer');
+    
+    const evento = new CustomEvent('nova-notificacao', {
+      detail: {
+        tipo: tipoToast,
+        titulo: notificacao.titulo,
+        descricao: notificacao.descricao
+      }
+    });
+    
+    console.log('🎯 Evento criado:', evento);
+    window.dispatchEvent(evento);
+    console.log('🎯 Evento disparado!');
+  };
 
   if (loading) {
     return (
@@ -237,7 +273,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Toast Container - Seu componente existente */}
+      {/* ========== BANNER DE STATUS OFFLINE ========== */}
+      <OfflineStatus />
+      {/* ============================================== */}
+
+      {/* Toast Container */}
       <ToastContainer />
 
       <header 
@@ -266,7 +306,6 @@ function App() {
           </div>
           
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Sino de Notificações */}
             <NotificationBell onNovaNotificacao={handleNovaNotificacao} />
 
             <div className="text-right hidden md:block">

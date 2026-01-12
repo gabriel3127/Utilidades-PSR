@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabase';
+import { useOnlineStatus } from './useOnlineStatus';
 
 export const useNotificacoes = (onNovaNotificacao) => {
   const [notificacoes, setNotificacoes] = useState([]);
@@ -7,13 +8,14 @@ export const useNotificacoes = (onNovaNotificacao) => {
   const [userId, setUserId] = useState(null);
   const ultimaNotificacaoRef = useRef(null);
   const pollingIntervalRef = useRef(null);
+  const { isOnline } = useOnlineStatus();
 
   useEffect(() => {
     carregarUsuario();
   }, []);
 
   useEffect(() => {
-    if (userId) {
+    if (userId && isOnline) {
       carregarNotificacoes();
       
       const cleanup = setupRealtimeSubscription(onNovaNotificacao);
@@ -29,9 +31,11 @@ export const useNotificacoes = (onNovaNotificacao) => {
         }
       };
     }
-  }, [userId, onNovaNotificacao]);
+  }, [userId, onNovaNotificacao, isOnline]);
 
   const carregarUsuario = async () => {
+    if (!isOnline) return;
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -43,7 +47,7 @@ export const useNotificacoes = (onNovaNotificacao) => {
   };
 
   const carregarNotificacoes = async () => {
-    if (!userId) return;
+    if (!userId || !isOnline) return;
 
     setLoading(true);
     try {
@@ -73,7 +77,7 @@ export const useNotificacoes = (onNovaNotificacao) => {
   };
 
   const verificarNovasNotificacoes = async () => {
-    if (!userId || !ultimaNotificacaoRef.current) return;
+    if (!userId || !ultimaNotificacaoRef.current || !isOnline) return;
 
     try {
       const { data, error } = await supabase

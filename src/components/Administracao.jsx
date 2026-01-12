@@ -3,6 +3,7 @@ import GerenciarPerfis from './GerenciarPerfis';
 import SetoresETipos from './SetoresETipos';
 import GerenciarUsuarios from './GerenciarUsuarios';
 import GerenciarEmpresas from './GerenciarEmpresas';
+import GerenciarBackup from './GerenciarBackup';
 
 const Administracao = ({ userRole }) => {
   const [abaAtiva, setAbaAtiva] = useState('usuarios');
@@ -17,6 +18,8 @@ const Administracao = ({ userRole }) => {
         return <SetoresETipos />;
       case 'perfis':
         return <GerenciarPerfis />;
+      case 'backup':  // ← ADICIONAR ESTE CASE
+        return <GerenciarBackup />;
       default:
         return <GerenciarUsuarios />;
     }
@@ -35,7 +38,8 @@ const Administracao = ({ userRole }) => {
           { id: 'usuarios', label: 'Usuários' },
           { id: 'empresas', label: 'Empresas' },
           { id: 'setores_tipos', label: 'Setores e Tipos de Problema' },
-          { id: 'perfis', label: 'Perfis e Permissões' }
+          { id: 'perfis', label: 'Perfis e Permissões' },
+          { id: 'backup', label: 'Backup' }
         ].map((tab) => (
           <button
             key={tab.id}
