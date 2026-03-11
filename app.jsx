@@ -18,6 +18,7 @@ import { ProfilePrefsModal } from '@/pages/ProfilePrefsModal'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useNotifications, requestNotificationPermission } from '@/hooks/useNotifications'
 import { GLOBAL_STYLES, PIPELINES } from '@/constants'
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 
 // ─── Detecção de dispositivo ──────────────────────────────────────────────────
 const isMobile = () => window.innerWidth < 768
@@ -562,8 +563,14 @@ function MainApp({ user, profile }) {
 function Root() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(null)
+  const [isRecovery,  setIsRecovery]  = useState(false)
 
   useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('type=recovery')) {
+      setIsRecovery(true)
+    }
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) loadProfile(session.user.id)
