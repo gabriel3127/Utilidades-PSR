@@ -43,10 +43,10 @@ export function NotificationBell({ userId, dark = true }) {
     <div ref={ref} style={{ position: 'relative' }}>
       {/* Botão sino */}
       <button onClick={() => setOpen(o => !o)} style={{
-        background: 'none', border: 'none', cursor: 'pointer',
+        background: open ? (dark ? 'rgba(99,102,241,0.15)' : '#f1f5f9') : 'none',
+        border: 'none', cursor: 'pointer',
         padding: 6, position: 'relative', display: 'flex', alignItems: 'center',
         borderRadius: 8,
-        background: open ? (dark ? 'rgba(99,102,241,0.15)' : '#f1f5f9') : 'none',
       }}>
         <span style={{ fontSize: 20, lineHeight: 1 }}>🔔</span>
         {unreadCount > 0 && (

@@ -16,7 +16,7 @@ import { ImportPage } from '@/pages/ImportPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ProfilePrefsModal } from '@/pages/ProfilePrefsModal'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { useNotifications } from '@/hooks/useNotifications'
+import { useNotifications, requestNotificationPermission } from '@/hooks/useNotifications'
 import { GLOBAL_STYLES, PIPELINES } from '@/constants'
 
 // ─── Detecção de dispositivo ──────────────────────────────────────────────────
@@ -565,7 +565,8 @@ function Root() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session); if (session?.user) loadProfile(session.user.id)
+      setSession(session)
+      if (session?.user) loadProfile(session.user.id)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setSession(session)
@@ -576,8 +577,35 @@ function Root() {
   }, [])
 
   const loadProfile = async (uid) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', uid).single()
-    setProfile(data)
+    // Carrega perfil do usuário + permissões do role (salvas pelo admin)
+    const [{ data: profileData }, { data: rolePermsData }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', uid).single(),
+      supabase.from('role_permissions').select('role, permissions, label, icon'),
+    ])
+
+    if (!profileData) return
+
+    // Se o usuário não tem module_permissions próprias, aplica as do role
+    const roleMap = {}
+    rolePermsData?.forEach(rp => { roleMap[rp.role] = rp })
+
+    const mp = profileData.module_permissions
+    const hasOwnPerms = mp && Object.keys(mp).length > 0
+
+    if (!hasOwnPerms && roleMap[profileData.role]?.permissions) {
+      profileData.module_permissions = roleMap[profileData.role].permissions
+    }
+
+    // Aplica label/icon customizado do role se existir
+    if (roleMap[profileData.role]?.label) {
+      profileData._roleLabel = roleMap[profileData.role].label
+      profileData._roleIcon  = roleMap[profileData.role].icon
+    }
+
+    setProfile(profileData)
+
+    // Pedir permissão de notificação do browser (só pede uma vez, o browser lembra)
+    requestNotificationPermission()
   }
 
   if (session === undefined) return (
@@ -590,11 +618,6 @@ function Root() {
   return <MainApp user={session.user} profile={profile} />
 }
 
-export default function App() {
-  return (
-    <ThemeProvider>
-      <style>{GLOBAL_STYLES}</style>
-      <Root />
-    </ThemeProvider>
-  )
+  export default function App() {
+  return <ThemeProvider><Root /></ThemeProvider>
 }

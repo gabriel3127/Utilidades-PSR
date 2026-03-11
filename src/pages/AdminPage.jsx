@@ -5,7 +5,6 @@ import { Modal } from "@/components/shared/Modal"
 import { FormField } from "@/components/shared/FormField"
 import { PIPELINES } from "@/constants"
 
-// ─── Estilos ──────────────────────────────────────────────────────────────────
 const card     = `bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 mb-4`
 const input    = `w-full px-3 py-2.5 rounded-xl text-[13px] outline-none transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-400 dark:focus:border-indigo-500 placeholder:text-slate-400`
 const btnPrimary = `inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-gradient-to-br from-indigo-500 to-violet-500 text-white border-none cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`
@@ -23,7 +22,6 @@ const TABS = [
   { id: "config",  label: "Configurações",   icon: "⚙️" },
 ]
 
-// ─── Perfis disponíveis ───────────────────────────────────────────────────────
 const ROLES = [
   { id: "admin",               icon: "👑", label: "Administrador",       desc: "Acesso total, incluindo painel admin" },
   { id: "gerente",             icon: "🔷", label: "Gerente",             desc: "Tudo exceto painel de administração" },
@@ -32,7 +30,6 @@ const ROLES = [
   { id: "ocorrencias_visitas", icon: "🔧", label: "Ocor. + Visitas",     desc: "Ocorrências e visitas técnicas" },
 ]
 
-// Permissões padrão por perfil (pré-selecionadas ao escolher o role)
 const DEFAULT_PERMS = {
   admin: {
     pipeline:    { enabled: true,  pipelines: PIPELINES.map(p => p.id), can_create: true, can_edit: true, can_delete: true, can_import: true, can_config: true },
@@ -81,7 +78,6 @@ const BLANK_PERMS = {
 
 const BLANK_USER = { name: "", email: "", password: "", role: "vendedor", module_permissions: DEFAULT_PERMS.vendedor }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function ColorPicker({ value, onChange }) {
   return (
     <div className="flex gap-1.5 flex-wrap items-center">
@@ -141,9 +137,7 @@ function SectionBox({ title, icon, enabled, onToggle, children }) {
   )
 }
 
-// ─── Componente de permissões modulares ───────────────────────────────────────
 function ModulePermissions({ perms: rawPerms, onChange, setores }) {
-  // Garante todos os módulos mesmo se vier incompleto do banco
   const perms = {
     pipeline:    { enabled: false, pipelines: [], can_create: false, can_edit: false, can_delete: false, can_import: false, can_config: false, ...(rawPerms?.pipeline    || {}) },
     occurrences: { enabled: false, setores: [],   can_create: false, can_edit: false, can_resolve: false, can_delete: false, can_export: false, view_all: false, ...(rawPerms?.occurrences || {}) },
@@ -156,8 +150,6 @@ function ModulePermissions({ perms: rawPerms, onChange, setores }) {
 
   return (
     <div className="flex flex-col gap-3">
-
-      {/* Pipeline */}
       <SectionBox title="Pipeline de Vendas" icon="💼"
         enabled={perms.pipeline.enabled}
         onToggle={() => upd("pipeline", "enabled", !perms.pipeline.enabled)}>
@@ -186,7 +178,6 @@ function ModulePermissions({ perms: rawPerms, onChange, setores }) {
         </div>
       </SectionBox>
 
-      {/* Ocorrências */}
       <SectionBox title="Ocorrências" icon="⚠️"
         enabled={perms.occurrences.enabled}
         onToggle={() => upd("occurrences", "enabled", !perms.occurrences.enabled)}>
@@ -221,7 +212,6 @@ function ModulePermissions({ perms: rawPerms, onChange, setores }) {
         </div>
       </SectionBox>
 
-      {/* Visitas */}
       <SectionBox title="Visitas Técnicas" icon="🔧"
         enabled={perms.visits.enabled}
         onToggle={() => upd("visits", "enabled", !perms.visits.enabled)}>
@@ -255,7 +245,6 @@ function ModulePermissions({ perms: rawPerms, onChange, setores }) {
         </div>
       </SectionBox>
 
-      {/* Dashboard */}
       <SectionBox title="Dashboard" icon="📊"
         enabled={perms.dashboard?.enabled}
         onToggle={() => upd("dashboard", "enabled", !perms.dashboard?.enabled)}>
@@ -264,7 +253,6 @@ function ModulePermissions({ perms: rawPerms, onChange, setores }) {
         </div>
       </SectionBox>
 
-      {/* Painel Admin */}
       <SectionBox title="Painel de Administração" icon="⚙️"
         enabled={perms.admin_panel?.enabled}
         onToggle={() => upd("admin_panel", "enabled", !perms.admin_panel?.enabled)}>
@@ -276,8 +264,6 @@ function ModulePermissions({ perms: rawPerms, onChange, setores }) {
   )
 }
 
-// ─── Modal Cadastrar/Editar Usuário ───────────────────────────────────────────
-// Modal EDITAR usuário — simples: nome, perfil, status
 function EditUserModal({ user, onClose, onSave }) {
   const [form,    setForm]    = useState({ ...user })
   const [loading, setLoading] = useState(false)
@@ -319,7 +305,6 @@ function EditUserModal({ user, onClose, onSave }) {
   )
 }
 
-// Modal CRIAR usuário — 3 steps
 function UserFormModal({ user, setores, onClose, onSave, isCreate }) {
   const [step,    setStep]    = useState(1)
   const [form,    setForm]    = useState(user || BLANK_USER)
@@ -345,7 +330,6 @@ function UserFormModal({ user, setores, onClose, onSave, isCreate }) {
 
   return (
     <Modal title="Cadastrar usuário" onClose={onClose} width={580}>
-      {/* Indicador de steps */}
       <div className="flex items-center gap-2 mb-6">
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
           <div key={s} className="flex items-center gap-2 flex-1">
@@ -422,17 +406,28 @@ function UserFormModal({ user, setores, onClose, onSave, isCreate }) {
   )
 }
 
-// ─── Tab Usuários ─────────────────────────────────────────────────────────────
 function TabUsuarios({ showToast, me }) {
   const [users,       setUsers]       = useState([])
   const [setores,     setSetores]     = useState([])
+  const [roleLabels,  setRoleLabels]  = useState({})
   const [showCreate,  setShowCreate]  = useState(false)
   const [editingUser, setEditingUser] = useState(null)
 
   useEffect(() => {
     supabase.from("profiles").select("*").order("name").then(({ data }) => setUsers(data || []))
     supabase.from("setores").select("id,nome").eq("ativo", true).order("nome").then(({ data }) => setSetores(data || []))
+    supabase.from("role_permissions").select("role,label,icon").then(({ data }) => {
+      const map = {}
+      data?.forEach(r => { map[r.role] = { label: r.label, icon: r.icon } })
+      setRoleLabels(map)
+    })
   }, [])
+
+  const rl = (roleId) => {
+    const saved = roleLabels[roleId]
+    const fallback = ROLES.find(r => r.id === roleId)
+    return `${saved?.icon || fallback?.icon || ''} ${saved?.label || fallback?.label || roleId}`
+  }
 
   const createUser = async (form) => {
     if (!form.name || !form.email || !form.password) return showToast("Preencha nome, email e senha", "error")
@@ -538,12 +533,12 @@ function TabUsuarios({ showToast, me }) {
       <div className={card}>
         {users.length === 0 ? <EmptyState icon="👥" text="Nenhum usuário cadastrado" /> : (
           <>
-            <RoleSection label="👑 Administradores"    list={grouped.admin} />
-            <RoleSection label="🔷 Gerentes"           list={grouped.gerente} />
-            <RoleSection label="💼 Vendedores"         list={grouped.vendedor} />
-            <RoleSection label="⚠️🔧 Ocor. + Visitas" list={grouped.ocorrencias_visitas} />
-            <RoleSection label="⚠️ Ocorrências"        list={grouped.ocorrencias} />
-            <RoleSection label="👤 Outros"             list={grouped.outros} />
+            <RoleSection label={rl("admin")}               list={grouped.admin} />
+            <RoleSection label={rl("gerente")}             list={grouped.gerente} />
+            <RoleSection label={rl("vendedor")}            list={grouped.vendedor} />
+            <RoleSection label={rl("ocorrencias_visitas")} list={grouped.ocorrencias_visitas} />
+            <RoleSection label={rl("ocorrencias")}         list={grouped.ocorrencias} />
+            <RoleSection label="👤 Outros"                 list={grouped.outros} />
           </>
         )}
       </div>
@@ -553,9 +548,6 @@ function TabUsuarios({ showToast, me }) {
   )
 }
 
-// ─── Tab Perfis ───────────────────────────────────────────────────────────────
-// Permite visualizar e editar as permissões padrão de cada perfil.
-// Todos os usuários com aquele role herdam as permissões ao fazer login.
 function TabPerfis({ showToast }) {
   const [setores,    setSetores]    = useState([])
   const [perfsData,  setPerfsData]  = useState(null)
@@ -603,12 +595,34 @@ function TabPerfis({ showToast }) {
     if (!perfsData) return
     setSaving(true)
     const d = perfsData[activeRole]
+
+    // 1. Salvar na tabela role_permissions
     const { error } = await supabase.from("role_permissions").upsert(
       { role: activeRole, permissions: d.permissions, label: d.label, icon: d.icon },
       { onConflict: "role" }
     )
-    if (error) showToast(error.message, "error")
-    else showToast(`Permissões de "${getLabel(activeRole)}" salvas!`)
+    if (error) { showToast(error.message, "error"); setSaving(false); return }
+
+    // 2. Propagar para usuários do role sem permissões customizadas
+    const { data: usersWithRole } = await supabase
+      .from("profiles")
+      .select("id, module_permissions")
+      .eq("role", activeRole)
+
+    if (usersWithRole?.length) {
+      const usersToUpdate = usersWithRole.filter(u => {
+        const mp = u.module_permissions
+        return !mp || Object.keys(mp).length === 0
+      })
+      if (usersToUpdate.length > 0) {
+        await supabase
+          .from("profiles")
+          .update({ module_permissions: d.permissions })
+          .in("id", usersToUpdate.map(u => u.id))
+      }
+    }
+
+    showToast(`Permissões de "${getLabel(activeRole)}" salvas!${usersWithRole?.length ? ` (${usersWithRole.length} usuário(s) atualizado(s))` : ""}`)
     setSaving(false)
   }
 
@@ -705,7 +719,6 @@ function TabPerfis({ showToast }) {
   )
 }
 
-// ─── Tab Setores (com Tipos de Problema aninhados) ────────────────────────────
 function TabSetores({ showToast }) {
   const [setores,   setSetores]   = useState([])
   const [tipos,     setTipos]     = useState([])
@@ -888,7 +901,6 @@ function TabSetores({ showToast }) {
   )
 }
 
-// ─── Tab Tags ─────────────────────────────────────────────────────────────────
 function TabTags({ showToast, locationTags, setLocationTags }) {
   const [newTag, setNewTag] = useState("")
   const addTag = async () => {
@@ -920,7 +932,6 @@ function TabTags({ showToast, locationTags, setLocationTags }) {
   )
 }
 
-// ─── Tab Tipos de Visita ──────────────────────────────────────────────────────
 function TabTiposVisita({ showToast }) {
   const [tipos,   setTipos]   = useState([])
   const [editing, setEditing] = useState(null)
@@ -974,7 +985,6 @@ function TabTiposVisita({ showToast }) {
   )
 }
 
-// ─── Tab Configurações ────────────────────────────────────────────────────────
 function TabConfiguracoes({ showToast }) {
   const [cfg,      setCfg]      = useState(null)
   const [eventCfg, setEventCfg] = useState([])
@@ -1060,7 +1070,6 @@ function TabConfiguracoes({ showToast }) {
   )
 }
 
-// ─── AdminPage ────────────────────────────────────────────────────────────────
 export function AdminPage() {
   const { showToast, profile: me, locationTags, setLocationTags } = useApp()
   const [tab, setTab] = useState("users")
