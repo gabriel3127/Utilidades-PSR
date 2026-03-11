@@ -1,0 +1,49 @@
+{
+  "name": "PSR Embalagens — Sistema de Gestão",
+  "short_name": "PSR",
+  "description": "Pipeline CRM, Ocorrências e Visitas Técnicas",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "lang": "pt-BR",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/psr-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/psr-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/psr-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "apple touch icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova Ocorrência",
+      "short_name": "Ocorrência",
+      "description": "Lançar uma nova ocorrência rapidamente",
+      "url": "/occurrences/new",
+      "icons": [{ "src": "/icons/psr-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nova Visita",
+      "short_name": "Visita",
+      "description": "Registrar uma nova visita técnica",
+      "url": "/visits/new",
+      "icons": [{ "src": "/icons/psr-96.png", "sizes": "96x96" }]
+    }
+  ]
+}

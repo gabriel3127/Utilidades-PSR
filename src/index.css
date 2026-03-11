@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+@layer base {
+  /* Scroll suave globalmente */
+  html {
+    scroll-behavior: smooth;
+    /* Evita bounce scroll no iOS que quebra o layout do PWA */
+    overscroll-behavior: none;
+  }
+
+  body {
+    /* Fonte padrão */
+    @apply font-sans antialiased;
+    /* Previne seleção de texto em botões e elementos de UI */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Scrollbar customizada (desktop) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+
+/* ─── Components ──────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Botão primário — PSR laranja */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           min-h-touch px-5
+           bg-brand-600 hover:bg-brand-700 active:bg-brand-800
+           text-white font-semibold text-sm
+           rounded-xl
+           transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
+  }
+
+  /* Botão secundário */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           min-h-touch px-5
+           bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700
+           text-gray-700 dark:text-gray-200 font-semibold text-sm
+           rounded-xl border border-gray-200 dark:border-gray-700
+           transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400;
+  }
+
+  /* Botão ghost (ícone) */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center
+           w-10 h-10
+           text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
+           hover:bg-gray-100 dark:hover:bg-gray-800
+           rounded-lg transition-colors duration-150;
+  }
+
+  /* Card padrão */
+  .card {
+    @apply bg-white dark:bg-gray-900
+           border border-gray-200 dark:border-gray-800
+           rounded-2xl shadow-sm;
+  }
+
+  /* Input padrão */
+  .input {
+    @apply w-full min-h-touch px-4
+           bg-white dark:bg-gray-900
+           border border-gray-300 dark:border-gray-700
+           text-gray-900 dark:text-gray-100
+           placeholder-gray-400 dark:placeholder-gray-600
+           rounded-xl text-sm
+           transition-colors duration-150
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Label padrão */
+  .label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5;
+  }
+
+  /* Badge de status */
+  .badge {
+    @apply inline-flex items-center gap-1
+           px-2.5 py-0.5
+           text-xs font-semibold rounded-full;
+  }
+
+  /* Offline banner — fixo no topo */
+  .offline-banner {
+    @apply fixed top-0 inset-x-0 z-50
+           flex items-center justify-center gap-2
+           py-2 px-4
+           bg-amber-500 dark:bg-amber-600
+           text-white text-sm font-semibold
+           animate-slide-down;
+  }
+
+  /* FAB — Floating Action Button (mobile) */
+  .fab {
+    @apply fixed bottom-6 right-6 z-40
+           w-14 h-14
+           bg-brand-600 hover:bg-brand-700 active:bg-brand-800
+           text-white
+           rounded-full shadow-lg shadow-brand-600/30
+           flex items-center justify-center
+           transition-all duration-200
+           active:scale-95;
+  }
+
+  /* Sidebar item ativo */
+  .sidebar-item-active {
+    @apply bg-indigo-500/20 text-indigo-300;
+  }
+
+  /* Sidebar item inativo */
+  .sidebar-item {
+    @apply text-gray-400 hover:bg-white/5 hover:text-gray-200;
+  }
+}
+
+/* ─── Utilities ───────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Texto truncado com número de linhas */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Safe area padding (iPhone com notch) */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* ─── Animações PWA ───────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
