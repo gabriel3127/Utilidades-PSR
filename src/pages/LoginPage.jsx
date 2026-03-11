@@ -20,7 +20,7 @@ export function LoginPage() {
         if (error) setMsg({type:"error",text:error.message});
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
-          redirectTo: `${window.location.origin}/reset-password.html`,
+          redirectTo: `${window.location.origin}/`,
         });
         if (error) setMsg({type:"error",text:error.message});
         else setMsg({type:"success",text:"Link enviado! Verifique seu email."});
