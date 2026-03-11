@@ -265,10 +265,24 @@ function ModulePermissions({ perms: rawPerms, onChange, setores }) {
 }
 
 function EditUserModal({ user, onClose, onSave }) {
-  const [form,    setForm]    = useState({ ...user })
-  const [loading, setLoading] = useState(false)
+  const [form,       setForm]       = useState({ ...user })
+  const [loading,    setLoading]    = useState(false)
+  const [roleLabels, setRoleLabels] = useState({})
   const setField = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const handleSave = async () => { setLoading(true); await onSave(form); setLoading(false) }
+
+  useEffect(() => {
+    supabase.from("role_permissions").select("role,label,icon").then(({ data }) => {
+      const map = {}
+      data?.forEach(r => { map[r.role] = { label: r.label, icon: r.icon } })
+      setRoleLabels(map)
+    })
+  }, [])
+
+  const rl = (r) => {
+    const saved = roleLabels[r.id]
+    return { icon: saved?.icon || r.icon, label: saved?.label || r.label }
+  }
 
   return (
     <Modal title={`Editar — ${user.name}`} onClose={onClose} width={460}>
@@ -278,16 +292,19 @@ function EditUserModal({ user, onClose, onSave }) {
         </FormField>
         <FormField label="Perfil">
           <div className="flex flex-col gap-2 mt-1">
-            {ROLES.map(r => (
-              <label key={r.id} className={`flex items-start gap-3 cursor-pointer px-3.5 py-2.5 rounded-xl border transition-all
-                ${form.role === r.id ? 'border-indigo-500/50 bg-indigo-500/8 dark:bg-indigo-500/10' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}>
-                <input type="radio" checked={form.role === r.id} onChange={() => setField("role", r.id)} className="accent-indigo-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className={`text-[13px] font-semibold ${form.role === r.id ? 'text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{r.icon} {r.label}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">{r.desc}</div>
-                </div>
-              </label>
-            ))}
+            {ROLES.map(r => {
+              const { icon, label } = rl(r)
+              return (
+                <label key={r.id} className={`flex items-start gap-3 cursor-pointer px-3.5 py-2.5 rounded-xl border transition-all
+                  ${form.role === r.id ? 'border-indigo-500/50 bg-indigo-500/8 dark:bg-indigo-500/10' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}>
+                  <input type="radio" checked={form.role === r.id} onChange={() => setField("role", r.id)} className="accent-indigo-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className={`text-[13px] font-semibold ${form.role === r.id ? 'text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{icon} {label}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">{r.desc}</div>
+                  </div>
+                </label>
+              )
+            })}
           </div>
         </FormField>
         <FormField label="Status">
@@ -449,13 +466,26 @@ function TabUsuarios({ showToast, me }) {
   }
 
   const saveUser = async (form) => {
+    // Busca permissões do novo role para aplicar
+    const { data: rolePermData } = await supabase
+      .from("role_permissions")
+      .select("permissions")
+      .eq("role", form.role)
+      .single()
+
+    const newPerms = rolePermData?.permissions
+      || DEFAULT_PERMS[form.role]
+      || BLANK_PERMS
+
     const { error } = await supabase.from("profiles").update({
       name: form.name,
       role: form.role,
       active: form.active !== false,
+      module_permissions: newPerms,  // ← sempre sobrescreve com as do role
     }).eq("id", form.id)
+
     if (error) return showToast(error.message, "error")
-    setUsers(prev => prev.map(u => u.id === form.id ? { ...u, ...form } : u))
+    setUsers(prev => prev.map(u => u.id === form.id ? { ...u, ...form, module_permissions: newPerms } : u))
     setEditingUser(null)
     showToast("Usuário atualizado!")
   }
