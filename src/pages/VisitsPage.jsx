@@ -212,20 +212,25 @@ function ClientFields({ form, online, setField }) {
   )
 }
 
-function Etapa0({ form, setField, online, allUsers }) {
+// ── Etapa 0 — Dados Básicos (consultor = usuário logado, somente leitura) ──────
+function Etapa0({ form, setField, online }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
         <label className={cx.labelCls}>Data da visita *</label>
         <input type="date" className={cx.inputCls} value={form.dataVisita} onChange={e => setField('dataVisita', e.target.value)} />
       </div>
+
+      {/* Consultor: somente leitura — preenchido automaticamente com o usuário logado */}
       <div>
-        <label className={cx.labelCls}>Consultor *</label>
-        <select className={`${cx.inputCls} cursor-pointer appearance-none`} value={form.nomeConsultor} onChange={e => setField('nomeConsultor', e.target.value)}>
-          <option value="">Selecionar...</option>
-          {allUsers?.filter(u => u.role !== 'pendente').map(u => <option key={u.id} value={u.name || u.email}>{u.name || u.email}</option>)}
-        </select>
+        <label className={cx.labelCls}>Consultor</label>
+        <div className={`${cx.inputCls} flex items-center gap-2 opacity-80 cursor-not-allowed select-none`}>
+          <span className="text-emerald-500 text-xs">✓</span>
+          <span>{form.nomeConsultor || '—'}</span>
+        </div>
+        <p className="text-[11px] text-slate-400 mt-1">Preenchido automaticamente com seu usuário</p>
       </div>
+
       <ClientFields form={form} online={online} setField={setField} />
       <div>
         <label className={cx.labelCls}>Pessoa de contato</label>
@@ -379,11 +384,20 @@ function Etapa5({ form, setField }) {
 }
 
 function VisitForm({ onClose, onSaved }) {
-  const { user, online, showToast, allUsers } = useApp()
+  const { user, online, showToast } = useApp()
   const [form, setForm]     = useState({ ...EMPTY_FORM })
   const [etapa, setEtapa]   = useState(0)
   const [saving, setSaving] = useState(false)
   const mobile = isMobile()
+
+  // ── Preenche consultor automaticamente com o nome do usuário logado ──
+  useEffect(() => {
+    if (user?.name) {
+      setForm(f => ({ ...f, nomeConsultor: user.name }))
+    } else if (user?.email) {
+      setForm(f => ({ ...f, nomeConsultor: user.email }))
+    }
+  }, [user])
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const setMulti = (k, v) => setForm(f => ({ ...f, [k]: f[k].includes(v) ? f[k].filter(x => x !== v) : [...f[k], v] }))
@@ -457,7 +471,7 @@ function VisitForm({ onClose, onSaved }) {
             className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto p-5">
-          {etapa === 0 && <Etapa0 form={form} setField={setField} online={online} allUsers={allUsers} />}
+          {etapa === 0 && <Etapa0 form={form} setField={setField} online={online} />}
           {etapa === 1 && <Etapa1 form={form} setField={setField} />}
           {etapa === 2 && <Etapa2 form={form} setField={setField} setMulti={setMulti} />}
           {etapa === 3 && <Etapa3 form={form} setField={setField} />}
@@ -619,7 +633,6 @@ export function VisitsPage({ onBack }) {
     <div className={`min-h-screen ${cx.pageBg} ${cx.textPrimary}`}>
       <div className={`px-6 border-b ${cx.border} bg-white dark:bg-slate-900 relative flex items-center justify-between`}
         style={{ minHeight: 56 }}>
-        {/* Esquerda */}
         <div className="flex-shrink-0 z-10">
           {onBack && (
             <button onClick={onBack}
@@ -629,12 +642,10 @@ export function VisitsPage({ onBack }) {
             </button>
           )}
         </div>
-        {/* Centro */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <p className={`font-bold text-lg ${cx.textPrimary}`}>Visitas Técnicas</p>
           <p className="text-xs text-slate-400 mt-0.5">{visits.length} registros</p>
         </div>
-        {/* Direita */}
         <div className="flex items-center gap-2 flex-shrink-0 z-10">
           <ThemeToggle />
           {can('vis_create') && (
