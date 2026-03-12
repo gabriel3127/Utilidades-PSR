@@ -15,11 +15,11 @@ import { AdminPage } from '@/pages/AdminPage'
 import { ImportPage } from '@/pages/ImportPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ProfilePrefsModal } from '@/pages/ProfilePrefsModal'
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useNotifications, requestNotificationPermission } from '@/hooks/useNotifications'
 import { GLOBAL_STYLES, PIPELINES } from '@/constants'
 
-// ─── Detecção de dispositivo ──────────────────────────────────────────────────
 const isMobile = () => window.innerWidth < 768
 
 function useToast() {
@@ -36,48 +36,26 @@ function useToast() {
 function OfflineBanner({ online, pendingCount }) {
   if (online && pendingCount.total === 0) return null
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-      background: online ? '#10b981' : '#f59e0b',
-      color: '#fff', padding: '7px 16px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-      fontSize: 13, fontWeight: 600,
-    }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, background: online ? '#10b981' : '#f59e0b', color: '#fff', padding: '7px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
       <span>{online ? '🔄' : '📶'}</span>
-      <span>
-        {online
-          ? `Sincronizando ${pendingCount.total} item${pendingCount.total > 1 ? 's' : ''}...`
-          : 'Sem internet — dados salvos localmente'}
-      </span>
+      <span>{online ? `Sincronizando ${pendingCount.total} item${pendingCount.total > 1 ? 's' : ''}...` : 'Sem internet — dados salvos localmente'}</span>
     </div>
   )
 }
 
-// ─── MobileHome ───────────────────────────────────────────────────────────────
 function MobileHome({ profile, user, onNavigate, onSignOut, can }) {
   const { dark, toggle } = useTheme()
-
-  const bg      = dark ? '#0f172a' : '#f8fafc'
-  const surface = dark ? '#1e293b' : '#ffffff'
-  const border  = dark ? '#334155' : '#e2e8f0'
-  const text    = dark ? '#f1f5f9' : '#0f172a'
-  const muted   = dark ? '#64748b' : '#94a3b8'
-  const dim     = dark ? '#475569' : '#cbd5e1'
+  const bg = dark ? '#0f172a' : '#f8fafc', surface = dark ? '#1e293b' : '#ffffff'
+  const border = dark ? '#334155' : '#e2e8f0', text = dark ? '#f1f5f9' : '#0f172a'
+  const muted = dark ? '#64748b' : '#94a3b8', dim = dark ? '#475569' : '#cbd5e1'
 
   const apps = [
-    can('occ_create') && {
-      id: 'occurrences', label: 'Nova Ocorrência', description: 'Registrar um problema',
-      icon: '⚠️', color: '#f97316', gradient: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
-    },
-    can('vis_create') && {
-      id: 'visits', label: 'Nova Visita', description: 'Registrar visita a cliente',
-      icon: '🔧', color: '#0ea5e9', gradient: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)',
-    },
+    can('occ_create') && { id: 'occurrences', label: 'Nova Ocorrência', description: 'Registrar um problema', icon: '⚠️', color: '#f97316', gradient: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)' },
+    can('vis_create') && { id: 'visits', label: 'Nova Visita', description: 'Registrar visita a cliente', icon: '🔧', color: '#0ea5e9', gradient: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)' },
   ].filter(Boolean)
 
   return (
     <div style={{ minHeight: '100vh', background: bg, fontFamily: 'inherit' }}>
-      {/* Topbar */}
       <div style={{ background: surface, borderBottom: `1px solid ${border}`, padding: '0 20px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 20 }}>📦</span>
@@ -85,21 +63,15 @@ function MobileHome({ profile, user, onNavigate, onSignOut, can }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <NotificationBell userId={user?.id} dark={dark} />
-          {/* Botão tema */}
-          <button onClick={toggle} style={{ background: dark ? '#334155' : '#f1f5f9', border: `1px solid ${border}`, borderRadius: '50%', width: 34, height: 34, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {dark ? '☀️' : '🌙'}
-          </button>
+          <button onClick={toggle} style={{ background: dark ? '#334155' : '#f1f5f9', border: `1px solid ${border}`, borderRadius: '50%', width: 34, height: 34, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{dark ? '☀️' : '🌙'}</button>
           <button onClick={onSignOut} style={{ background: 'none', border: 'none', color: dim, cursor: 'pointer', fontSize: 16, padding: 4 }}>⏻</button>
         </div>
       </div>
-
-      {/* Body */}
       <div style={{ padding: '32px 20px' }}>
         <div style={{ marginBottom: 32 }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: text, marginBottom: 4 }}>Olá, {profile?.name?.split(' ')[0] || 'bem-vindo'} 👋</div>
           <div style={{ fontSize: 13, color: muted }}>O que você vai registrar hoje?</div>
         </div>
-
         {apps.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
@@ -121,7 +93,6 @@ function MobileHome({ profile, user, onNavigate, onSignOut, can }) {
             ))}
           </div>
         )}
-
         <div style={{ marginTop: 40, padding: '14px 16px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, fontSize: 12, color: muted, textAlign: 'center', lineHeight: 1.6 }}>
           💻 Para acessar o pipeline, dashboard e configurações, use o <strong style={{ color: '#818cf8' }}>computador</strong>
         </div>
@@ -130,7 +101,6 @@ function MobileHome({ profile, user, onNavigate, onSignOut, can }) {
   )
 }
 
-// ─── HomeScreen (desktop) ─────────────────────────────────────────────────────
 function HomeScreen({ profile, user, onNavigate, onSignOut, isAdmin, can, canDashboard, canAdmin }) {
   const { dark } = useTheme()
   const [showPrefs, setShowPrefs] = useState(false)
@@ -215,48 +185,31 @@ function AppCard({ app, card, border, text, muted, onClick }) {
   )
 }
 
-// ─── AppShell ─────────────────────────────────────────────────────────────────
-// Usado por: Pipeline, Import, Admin, Dashboard
-// A sidebar é sempre dark (design intencional — igual ao sistema antigo)
-// O conteúdo usa background levemente diferente do preto puro para melhor contraste
 function AppShell({ children, activeApp, setActiveApp, profile, isAdmin, can, canAdmin, onHome, onSignOut, activePipeline, setActivePipeline, accessiblePipelines, collapsed, setCollapsed }) {
   const { dark } = useTheme()
   const w = collapsed ? 56 : 220
-
-  // Sidebar: sempre dark
-  const sidebarBg     = '#1e293b'
-  const sidebarBorder = '#334155'
-
-  // Conteúdo: respeita tema
+  const sidebarBg = '#1e293b', sidebarBorder = '#334155'
   const contentBg = dark ? '#0f172a' : '#f8fafc'
 
   const item = (active) => ({
-    width: '100%',
-    background: active ? 'rgba(99,102,241,0.2)' : 'transparent',
-    color: active ? '#c7d2fe' : '#94a3b8',
-    border: 'none', borderRadius: 8,
-    padding: collapsed ? '9px 0' : '8px 10px',
-    fontSize: 12, fontWeight: 600,
-    cursor: 'pointer', fontFamily: 'inherit',
-    display: 'flex', alignItems: 'center',
-    justifyContent: collapsed ? 'center' : 'flex-start',
-    gap: 8, marginBottom: 2, transition: 'all 0.12s',
+    width: '100%', background: active ? 'rgba(99,102,241,0.2)' : 'transparent',
+    color: active ? '#c7d2fe' : '#94a3b8', border: 'none', borderRadius: 8,
+    padding: collapsed ? '9px 0' : '8px 10px', fontSize: 12, fontWeight: 600,
+    cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center',
+    justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, marginBottom: 2, transition: 'all 0.12s',
   })
 
   const sectionLabel = (label) => collapsed ? null : (
     <div style={{ fontSize: 10, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 8px 4px' }}>{label}</div>
   )
 
-  // Nav content varia por módulo ativo
   const renderNav = () => {
     if (activeApp === 'pipeline' || activeApp === 'import') return (
       <>
         {sectionLabel('Pipelines')}
         {accessiblePipelines.map(p => (
-          <button key={p.id}
-            onClick={() => { setActivePipeline(p.id); setActiveApp('pipeline') }}
-            title={collapsed ? p.label : undefined}
-            style={item(activeApp === 'pipeline' && activePipeline === p.id)}>
+          <button key={p.id} onClick={() => { setActivePipeline(p.id); setActiveApp('pipeline') }}
+            title={collapsed ? p.label : undefined} style={item(activeApp === 'pipeline' && activePipeline === p.id)}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
             {!collapsed && <span style={{ lineHeight: 1.3 }}>{p.label}</span>}
           </button>
@@ -269,62 +222,47 @@ function AppShell({ children, activeApp, setActiveApp, profile, isAdmin, can, ca
         )}
       </>
     )
-
     if (activeApp === 'admin') return (
       <>
         {sectionLabel('Administração')}
         {[
-          { id: 'users',   icon: '👥', label: 'Usuários'       },
-          { id: 'perfis',  icon: '🎭', label: 'Perfis'         },
-          { id: 'setores', icon: '🏢', label: 'Setores'        },
-          { id: 'visitas', icon: '🔧', label: 'Tipos de Visita'},
-          { id: 'tags',    icon: '🏷️', label: 'Tags'           },
-          { id: 'config',  icon: '⚙️', label: 'Configurações'  },
+          { id: 'users', icon: '👥', label: 'Usuários' }, { id: 'perfis', icon: '🎭', label: 'Perfis' },
+          { id: 'setores', icon: '🏢', label: 'Setores' }, { id: 'visitas', icon: '🔧', label: 'Tipos de Visita' },
+          { id: 'tags', icon: '🏷️', label: 'Tags' }, { id: 'config', icon: '⚙️', label: 'Configurações' },
         ].map(t => (
-          <button key={t.id}
-            onClick={() => window.dispatchEvent(new CustomEvent('psr:admin-tab', { detail: t.id }))}
-            title={collapsed ? t.label : undefined}
-            style={item(false)}>
+          <button key={t.id} onClick={() => window.dispatchEvent(new CustomEvent('psr:admin-tab', { detail: t.id }))}
+            title={collapsed ? t.label : undefined} style={item(false)}>
             <span>{t.icon}</span>{!collapsed && <span>{t.label}</span>}
           </button>
         ))}
       </>
     )
-
     if (activeApp === 'dashboard') return (
       <>
         {sectionLabel('Dashboard')}
         {[
-          { id: 'geral',       icon: '📈', label: 'Visão Geral'  },
-          { id: 'pipeline',    icon: '💼', label: 'Pipeline'     },
-          { id: 'ocorrencias', icon: '⚠️', label: 'Ocorrências'  },
-          { id: 'visitas',     icon: '🔧', label: 'Visitas'      },
+          { id: 'geral', icon: '📈', label: 'Visão Geral' }, { id: 'pipeline', icon: '💼', label: 'Pipeline' },
+          { id: 'ocorrencias', icon: '⚠️', label: 'Ocorrências' }, { id: 'visitas', icon: '🔧', label: 'Visitas' },
         ].map(t => (
-          <button key={t.id}
-            onClick={() => window.dispatchEvent(new CustomEvent('psr:dash-tab', { detail: t.id }))}
-            title={collapsed ? t.label : undefined}
-            style={item(false)}>
+          <button key={t.id} onClick={() => window.dispatchEvent(new CustomEvent('psr:dash-tab', { detail: t.id }))}
+            title={collapsed ? t.label : undefined} style={item(false)}>
             <span>{t.icon}</span>{!collapsed && <span>{t.label}</span>}
           </button>
         ))}
       </>
     )
-
     return null
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: contentBg }}>
-      {/* Sidebar — sempre dark */}
       <div style={{ width: w, background: sidebarBg, borderRight: `1px solid ${sidebarBorder}`, display: 'flex', flexDirection: 'column', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 100, transition: 'width 0.2s', overflow: 'hidden' }}>
         <div style={{ padding: '10px 8px', borderBottom: `1px solid ${sidebarBorder}`, flexShrink: 0 }}>
           <button onClick={onHome} title="Início" style={item(false)}>
             <span style={{ fontSize: 13 }}>←</span>{!collapsed && <span>Início</span>}
           </button>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
-          {renderNav()}
-        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>{renderNav()}</div>
         <div style={{ padding: '8px', borderTop: `1px solid ${sidebarBorder}`, flexShrink: 0 }}>
           {canAdmin && activeApp !== 'admin' && (
             <button onClick={() => setActiveApp('admin')} title={collapsed ? 'Admin' : undefined} style={item(false)}>
@@ -349,7 +287,6 @@ function AppShell({ children, activeApp, setActiveApp, profile, isAdmin, can, ca
           </button>
         </div>
       </div>
-      {/* Conteúdo — padding lateral para respirar */}
       <div style={{ marginLeft: w, flex: 1, transition: 'margin-left 0.2s', minWidth: 0, padding: '24px 28px', boxSizing: 'border-box', background: contentBg }}>
         {children}
       </div>
@@ -357,7 +294,6 @@ function AppShell({ children, activeApp, setActiveApp, profile, isAdmin, can, ca
   )
 }
 
-// ─── MainApp ──────────────────────────────────────────────────────────────────
 function MainApp({ user, profile }) {
   const [activeApp, setActiveApp]           = useState(null)
   const [activePipeline, setActivePipeline] = useState(null)
@@ -376,11 +312,9 @@ function MainApp({ user, profile }) {
   const mobile  = isMobile()
   const isAdmin = profile?.role === 'admin'
 
-  // Verifica permissão: primeiro module_permissions do usuário, depois role_permissions global, depois legado
   const can = (key) => {
     if (isAdmin) return true
     const mp = profile?.module_permissions
-    // Mapeamento de chaves legadas para nova estrutura
     const modMap = {
       view_pipeline:  () => mp?.pipeline?.enabled,
       pip_create:     () => mp?.pipeline?.enabled && mp?.pipeline?.can_create,
@@ -405,7 +339,6 @@ function MainApp({ user, profile }) {
       view_admin:     () => mp?.admin_panel?.enabled,
     }
     if (mp && Object.keys(mp).length > 0 && modMap[key]) return !!(modMap[key]())
-    // Fallback legado
     return !!(profile?.permissions?.[key])
   }
 
@@ -449,29 +382,20 @@ function MainApp({ user, profile }) {
     if (cardRes.data) setCards(cardRes.data)
     if (ruleRes.data) setNotifRules(ruleRes.data)
     if (userRes.data) {
-      // Mapa de permissões por role (salvas pelo admin)
       const rolePerms = {}
       rolePermRes.data?.forEach(rp => { rolePerms[rp.role] = rp.permissions })
-
       const filtered = userRes.data.filter(u => {
         if (u.role === 'admin' || u.role === 'gerente') return true
-        // 1. module_permissions salvo diretamente no usuário
         const mp = u.module_permissions
-        if (mp && Object.keys(mp).length > 0) {
-          return mp.pipeline?.enabled && (mp.pipeline.pipelines || []).includes(activePipeline)
-        }
-        // 2. Sem module_permissions — usar role_permissions (configurado pelo admin na aba Perfis)
+        if (mp && Object.keys(mp).length > 0) return mp.pipeline?.enabled && (mp.pipeline.pipelines || []).includes(activePipeline)
         const rp = rolePerms[u.role]
-        if (rp) {
-          return rp.pipeline?.enabled && (rp.pipeline.pipelines || []).includes(activePipeline)
-        }
-        // 3. Legado: campo pipelines[] direto no profile
+        if (rp) return rp.pipeline?.enabled && (rp.pipeline.pipelines || []).includes(activePipeline)
         if ((u.pipelines || []).includes(activePipeline)) return true
         return false
       })
       setAllUsers(filtered)
     }
-    if (locRes.data)  setLocationTags(locRes.data)
+    if (locRes.data) setLocationTags(locRes.data)
   }, [activePipeline])
 
   useEffect(() => { loadData() }, [loadData])
@@ -492,8 +416,6 @@ function MainApp({ user, profile }) {
 
   const onSignOut = async () => { await supabase.auth.signOut() }
   const bannerH   = (!online || pendingCount.total > 0) ? 36 : 0
-
-  // ── Grupo sidebar: Pipeline, Import, Admin, Dashboard ──
   const sidebarApps = ['pipeline', 'import', 'admin', 'dashboard']
 
   const ctx = {
@@ -511,48 +433,25 @@ function MainApp({ user, profile }) {
     <AppProvider value={ctx}>
       <OfflineBanner online={online} pendingCount={pendingCount} />
       <Toast toasts={toasts} onDismiss={dismiss} />
-
       <div style={{ paddingTop: bannerH }}>
-
-        {/* ── MOBILE ─────────────────────────────────────────────── */}
-        {mobile && !activeApp && (
-          <MobileHome profile={profile} user={user} can={can} onNavigate={setActiveApp} onSignOut={onSignOut} />
-        )}
+        {mobile && !activeApp && <MobileHome profile={profile} user={user} can={can} onNavigate={setActiveApp} onSignOut={onSignOut} />}
         {mobile && activeApp === 'occurrences' && <OccurrencesPage onBack={() => setActiveApp(null)} />}
         {mobile && activeApp === 'visits'      && <VisitsPage      onBack={() => setActiveApp(null)} />}
 
-        {/* ── DESKTOP: Home ──────────────────────────────────────── */}
-        {!mobile && !activeApp && (
-          <HomeScreen profile={profile} user={user} isAdmin={isAdmin} can={can} canDashboard={canDashboard} canAdmin={canAdmin} onNavigate={setActiveApp} onSignOut={onSignOut} />
-        )}
+        {!mobile && !activeApp && <HomeScreen profile={profile} user={user} isAdmin={isAdmin} can={can} canDashboard={canDashboard} canAdmin={canAdmin} onNavigate={setActiveApp} onSignOut={onSignOut} />}
+        {!mobile && activeApp === 'occurrences' && <OccurrencesPage onBack={() => setActiveApp(null)} />}
+        {!mobile && activeApp === 'visits'      && <VisitsPage      onBack={() => setActiveApp(null)} />}
 
-        {/* ── DESKTOP: Ocorrências — sem sidebar, topbar na própria página ── */}
-        {!mobile && activeApp === 'occurrences' && (
-          <OccurrencesPage onBack={() => setActiveApp(null)} />
-        )}
-
-        {/* ── DESKTOP: Visitas — sem sidebar, topbar na própria página ── */}
-        {!mobile && activeApp === 'visits' && (
-          <VisitsPage onBack={() => setActiveApp(null)} />
-        )}
-
-        {/* ── DESKTOP: Pipeline, Import, Admin, Dashboard — sidebar ── */}
         {!mobile && activeApp && sidebarApps.includes(activeApp) && (
-          <AppShell
-            activeApp={activeApp} setActiveApp={setActiveApp}
-            profile={profile} isAdmin={isAdmin} can={can} canAdmin={canAdmin}
-            onHome={() => setActiveApp(null)} onSignOut={onSignOut}
-            activePipeline={activePipeline} setActivePipeline={setActivePipeline}
-            accessiblePipelines={accessiblePipelines}
-            collapsed={collapsed} setCollapsed={setCollapsed}
-          >
+          <AppShell activeApp={activeApp} setActiveApp={setActiveApp} profile={profile} isAdmin={isAdmin} can={can} canAdmin={canAdmin}
+            onHome={() => setActiveApp(null)} onSignOut={onSignOut} activePipeline={activePipeline} setActivePipeline={setActivePipeline}
+            accessiblePipelines={accessiblePipelines} collapsed={collapsed} setCollapsed={setCollapsed}>
             {activeApp === 'pipeline'  && can('view_pipeline') && <PipelinePage />}
             {activeApp === 'import'    && <ImportPage />}
             {activeApp === 'admin'     && canAdmin && <AdminPage />}
             {activeApp === 'dashboard' && canDashboard && <DashboardPage onBack={() => setActiveApp(null)} />}
           </AppShell>
         )}
-
       </div>
     </AppProvider>
   )
@@ -560,10 +459,15 @@ function MainApp({ user, profile }) {
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 function Root() {
-  const [session, setSession] = useState(undefined)
-  const [profile, setProfile] = useState(null)
+  const [session,    setSession]    = useState(undefined)
+  const [profile,    setProfile]    = useState(null)
+  const [isRecovery, setIsRecovery] = useState(false)
 
   useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('type=recovery')) setIsRecovery(true)
+    if (hash.includes('error=')) window.history.replaceState(null, '', '/')
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) loadProfile(session.user.id)
@@ -577,34 +481,27 @@ function Root() {
   }, [])
 
   const loadProfile = async (uid) => {
-    // Carrega perfil do usuário + permissões do role (salvas pelo admin)
     const [{ data: profileData }, { data: rolePermsData }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', uid).single(),
       supabase.from('role_permissions').select('role, permissions, label, icon'),
     ])
-
     if (!profileData) return
-
-    // Se o usuário não tem module_permissions próprias, aplica as do role
+    if (profileData.active === false) {
+      await supabase.auth.signOut()
+      return
+    }
     const roleMap = {}
     rolePermsData?.forEach(rp => { roleMap[rp.role] = rp })
-
     const mp = profileData.module_permissions
     const hasOwnPerms = mp && Object.keys(mp).length > 0
-
     if (!hasOwnPerms && roleMap[profileData.role]?.permissions) {
       profileData.module_permissions = roleMap[profileData.role].permissions
     }
-
-    // Aplica label/icon customizado do role se existir
     if (roleMap[profileData.role]?.label) {
       profileData._roleLabel = roleMap[profileData.role].label
       profileData._roleIcon  = roleMap[profileData.role].icon
     }
-
     setProfile(profileData)
-
-    // Pedir permissão de notificação do browser (só pede uma vez, o browser lembra)
     requestNotificationPermission()
   }
 
@@ -614,10 +511,18 @@ function Root() {
     </div>
   )
 
-  if (!session) return <LoginPage />
+  if (isRecovery) return (
+    <ResetPasswordPage onDone={() => {
+      setIsRecovery(false)
+      supabase.auth.signOut()
+    }} />
+  )
+
+  if (!session) return <LoginPage expiredLink={window.location.hash.includes('otp_expired')} />
+
   return <MainApp user={session.user} profile={profile} />
 }
 
-  export default function App() {
+export default function App() {
   return <ThemeProvider><Root /></ThemeProvider>
 }
