@@ -3,11 +3,11 @@ import { supabase } from "@/lib/supabase";
 import { AuthInput } from "@/components/shared/AuthInput";
 import { Spinner } from "@/components/shared/Spinner";
 
-export function LoginPage() {
+export function LoginPage({ expiredLink }) {
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState({ email:"", password:"" });
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState(null);
+  const [msg, setMsg] = useState(expiredLink ? { type: "error", text: "Link expirado. Solicite um novo." } : null);
 
   const handle = async () => {
     setMsg(null);
