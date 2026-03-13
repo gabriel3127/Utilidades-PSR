@@ -196,42 +196,73 @@ export function ImportPage() {
     }).filter(c => c.client_name);
   };
 
+  // ── CORRIGIDO: busca por external_id E por client_name em paralelo ──────────
   const checkDuplicates = async () => {
     if (!mapping.client_name) return showToast("Mapeie o campo Nome", "error");
     setImporting(true);
     const parsed = buildParsedRows();
-    const searchField = mapping.external_id ? "external_id" : "client_name";
-    const searchValues = parsed.map(r => r[searchField]).filter(Boolean);
-    let dupes = [], news = [...parsed];
 
-    if (searchValues.length > 0) {
-      const { data: existing } = await supabase
-        .from("pipeline_cards")
-        .select("id, client_name, company_name, external_id, column_id, pipeline_id, last_purchase_date")
-        .in(searchField, searchValues);
+    // Coleta valores únicos para cada campo de busca
+    const idsToSearch   = [...new Set(parsed.map(r => r.external_id).filter(Boolean))];
+    const namesToSearch = [...new Set(parsed.map(r => r.client_name).filter(Boolean))];
 
-      if (existing?.length > 0) {
-        const colIds = [...new Set(existing.map(c => c.column_id).filter(Boolean))];
-        const { data: cols } = await supabase.from("pipeline_columns").select("id,name").in("id", colIds);
-        const colMap = Object.fromEntries((cols || []).map(c => [c.id, c.name]));
-        const pipeMap = Object.fromEntries(PIPELINES.map(p => [p.id, p.label]));
-        const existingVals = new Set(existing.map(c => c[searchField]));
+    // Busca paralela por external_id e por client_name
+    let existing = [];
+    const queries = [];
+    if (idsToSearch.length)
+      queries.push(supabase.from("pipeline_cards")
+        .select("id,client_name,company_name,external_id,column_id,pipeline_id,last_purchase_date")
+        .in("external_id", idsToSearch));
+    if (namesToSearch.length)
+      queries.push(supabase.from("pipeline_cards")
+        .select("id,client_name,company_name,external_id,column_id,pipeline_id,last_purchase_date")
+        .in("client_name", namesToSearch));
 
-        dupes = parsed.filter(r => existingVals.has(r[searchField])).map(r => {
-          const match = existing.find(e => e[searchField] === r[searchField]);
+    const results = await Promise.all(queries);
+    results.forEach(r => { if (r.data) existing = [...existing, ...r.data]; });
+    // Deduplicar pelo id do card (pode ter aparecido nas duas buscas)
+    existing = Object.values(Object.fromEntries(existing.map(e => [e.id, e])));
+
+    let dupes = [], news = [];
+
+    if (existing.length > 0) {
+      const colIds = [...new Set(existing.map(c => c.column_id).filter(Boolean))];
+      const { data: cols } = await supabase.from("pipeline_columns").select("id,name").in("id", colIds);
+      const colMap  = Object.fromEntries((cols || []).map(c => [c.id, c.name]));
+      const pipeMap = Object.fromEntries(PIPELINES.map(p => [p.id, p.label]));
+
+      // Índices para lookup rápido — external_id tem prioridade sobre nome
+      const existingById   = Object.fromEntries(
+        existing.filter(e => e.external_id).map(e => [String(e.external_id), e])
+      );
+      const existingByName = Object.fromEntries(
+        existing.map(e => [e.client_name?.toLowerCase?.() ?? "", e])
+      );
+
+      for (const r of parsed) {
+        const match =
+          (r.external_id && existingById[String(r.external_id)]) ||
+          existingByName[r.client_name?.toLowerCase?.() ?? ""];
+
+        if (match) {
           const correctPipeline = getTargetPipelineId(importGroup, r.last_purchase_date, saleDays);
-          const needsMigration = match && correctPipeline !== match.pipeline_id;
-          return {
+          const needsMigration  = correctPipeline !== match.pipeline_id;
+          dupes.push({
             ...r,
-            found_in_pipeline: pipeMap[match?.pipeline_id] || match?.pipeline_id || "?",
-            found_in_column: colMap[match?.column_id] || "?",
-            found_pipeline_id: match?.pipeline_id, card_id: match?.id,
-            correct_pipeline_id: correctPipeline, needs_migration: needsMigration,
-            migration_label: needsMigration ? pipeMap[correctPipeline] : null,
-          };
-        });
-        news = parsed.filter(r => !existingVals.has(r[searchField]));
+            found_in_pipeline:   pipeMap[match.pipeline_id] || match.pipeline_id || "?",
+            found_in_column:     colMap[match.column_id]    || "?",
+            found_pipeline_id:   match.pipeline_id,
+            card_id:             match.id,
+            correct_pipeline_id: correctPipeline,
+            needs_migration:     needsMigration,
+            migration_label:     needsMigration ? pipeMap[correctPipeline] : null,
+          });
+        } else {
+          news.push(r);
+        }
       }
+    } else {
+      news = [...parsed];
     }
 
     setDuplicates(dupes); setNewRows(news); setChecked(true); setImporting(false);
@@ -263,8 +294,35 @@ export function ImportPage() {
           showToast(`Pipeline "${PIPELINES.find(p => p.id === pid)?.label || pid}" não tem colunas!`, "error");
           continue;
         }
+
+        // ── Verificação final anti-duplicata antes de cada batch de INSERT ──
+        const extIds = rows.map(r => r.external_id).filter(Boolean);
+        const names  = rows.map(r => r.client_name).filter(Boolean);
+        const alreadyInDb = new Set();
+
+        if (extIds.length) {
+          const { data: ex } = await supabase.from("pipeline_cards")
+            .select("external_id,client_name").in("external_id", extIds);
+          ex?.forEach(e => {
+            if (e.external_id) alreadyInDb.add("id:" + String(e.external_id));
+            alreadyInDb.add("name:" + (e.client_name?.toLowerCase() ?? ""));
+          });
+        }
+        if (names.length) {
+          const { data: ex } = await supabase.from("pipeline_cards")
+            .select("client_name").in("client_name", names);
+          ex?.forEach(e => alreadyInDb.add("name:" + (e.client_name?.toLowerCase() ?? "")));
+        }
+
+        const safeInsert = rows.filter(r =>
+          !alreadyInDb.has("id:" + String(r.external_id)) &&
+          !alreadyInDb.has("name:" + (r.client_name?.toLowerCase() ?? ""))
+        );
+
+        if (safeInsert.length === 0) continue;
+
         const BATCH = 100;
-        const toInsert = rows.map((r, i) => ({ ...r, pipeline_id: pid, column_id: pidColId, position: i }));
+        const toInsert = safeInsert.map((r, i) => ({ ...r, pipeline_id: pid, column_id: pidColId, position: i }));
         for (let i = 0; i < toInsert.length; i += BATCH) {
           const { data, error } = await supabase.from("pipeline_cards").insert(toInsert.slice(i, i + BATCH)).select();
           if (error) { showToast(error.message, "error"); setImporting(false); return; }

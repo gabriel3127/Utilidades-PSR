@@ -152,16 +152,16 @@ function TabGeral({ period, setPeriod }) {
     const load = async () => {
       setLoading(true)
       const { sinceISO, untilISO } = resolvePeriod(period)
-      const [occRes, visRes, cardRes, usersRes] = await Promise.all([
+      const [occRes, visRes, allCards, usersRes] = await Promise.all([
         supabase.from('occurrences').select('status,priority,created_at').gte('created_at', sinceISO).lte('created_at', untilISO),
         supabase.from('visitas_tecnicas').select('id,created_at').gte('created_at', sinceISO).lte('created_at', untilISO),
-        supabase.from('pipeline_cards').select('id,value,sales_history'),
+        fetchAllCards('id,value,sales_history'),
         supabase.from('profiles').select('id,active,role'),
       ])
-      const occs  = occRes.data  || []
-      const vis   = visRes.data  || []
-      const cards = cardRes.data || []
-      const users = usersRes.data|| []
+      const occs  = occRes.data   || []
+      const vis   = visRes.data   || []
+      const cards = allCards      || []
+      const users = usersRes.data || []
 
       // Valor real de vendas (soma de sales_history)
       const totalSalesValue = cards.reduce((sum, c) => {
